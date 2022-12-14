@@ -84,7 +84,6 @@ jobs:
           while true; do cat < /tmp/log; done &
           ./manage.sh start
       - name: Upload an Artifact
-        shell: bash
         uses: actions/upload-artifact@v3
         with:
           path: /tmp/artifact/*
