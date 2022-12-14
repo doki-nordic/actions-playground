@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 jobs:
   action:
-    runs-on: windows-2022
+    runs-on: windows-2020
     steps:
       - uses: actions/checkout@v3
         with:
@@ -22,7 +22,7 @@ jobs:
           echo ----------------- DOWNLOAD -----------------
           curl -o install.msi https://download.zerotier.com/dist/ZeroTier%20One.msi
           echo ----------------- INSTALL -----------------
-          msiexec /quiet /qn /i "install.msi /l*v "Setup.txt"
+          msiexec /quiet /qn /i install.msi /l*v "Setup.txt"
           echo msiexec exit
       - name: Setup path ZeroTier
         run: |
