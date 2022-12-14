@@ -3,18 +3,20 @@ on:
   workflow_dispatch:
 jobs:
   action:
-    runs-on: macos-11
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v3
         with:
           path: repo
       - name: Prepare job
+        shell: bash
         run: |
           mv repo /tmp/
           echo "ZEROTIER_DIR=/Library/Application Support/ZeroTier/One" >> $GITHUB_ENV
           echo "ZEROTIER_OWNER=root:admin" >> $GITHUB_ENV
           echo "MD5=md5" >> $GITHUB_ENV
       - name: Install ZeroTier
+        shell: bash
         working-directory: /tmp/repo
         run: |
           echo ----------------- INSTALL -----------------
@@ -44,6 +46,7 @@ jobs:
           echo ----------------- JOIN NETWORK -----------------
           sudo zerotier-cli join ${{ secrets.NETWORK_ID }}
       - name: Create SSH Keys
+        shell: bash
         working-directory: /tmp/repo
         run: |
           echo -n "${{ secrets.HOST_KEY }}" > host_key
@@ -52,6 +55,7 @@ jobs:
           ls -la
           $MD5 *
       - name: Your work starts here
+        shell: bash
         working-directory: /tmp/repo
         run: |
           #------------ Exported GitHub Actions context values starts here ------------
@@ -80,6 +84,7 @@ jobs:
           while true; do cat < /tmp/log; done &
           ./manage.sh start
       - name: Upload an Artifact
+        shell: bash
         uses: actions/upload-artifact@v3
         with:
           path: /tmp/artifact/*
