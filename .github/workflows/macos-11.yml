@@ -29,9 +29,12 @@ jobs:
       - name: Setup ZeroTier
         shell: bash
         run: |
-          zerotier-cli info | true
+          echo $PATH
+          zerotier-cli info || true
+          zerotier-cli.bat info || true
           sleep 30
-          zerotier-cli info | true
+          zerotier-cli info || true
+          zerotier-cli.bat info || true
           echo ----------------- STOP SERVICE -----------------
           sudo launchctl unload /Library/LaunchDaemons/com.zerotier.one.plist
           sleep 5
