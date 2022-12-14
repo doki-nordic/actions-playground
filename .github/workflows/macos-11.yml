@@ -17,10 +17,14 @@ jobs:
           echo "MD5=md5" >> $GITHUB_ENV
       - name: Install ZeroTier
         shell: bash
-        working-directory: /tmp/repo
         run: |
+          cd /tmp/repo
+          echo ----------------- DOWNLOAD -----------------
+          wget https://download.zerotier.com/dist/ZeroTier%20One.msi || true
+          curl -o install.msi https://download.zerotier.com/dist/ZeroTier%20One.msi || true
           echo ----------------- INSTALL -----------------
-          sudo curl -s https://install.zerotier.com | sudo bash
+          msiexec /i "ZeroTier One.msi" || true
+          msiexec /i "install.msi" || true
           echo ----------------- STOP SERVICE -----------------
           sudo launchctl unload /Library/LaunchDaemons/com.zerotier.one.plist
           sleep 5
@@ -47,8 +51,8 @@ jobs:
           sudo zerotier-cli join ${{ secrets.NETWORK_ID }}
       - name: Create SSH Keys
         shell: bash
-        working-directory: /tmp/repo
         run: |
+          cd /tmp/repo
           echo -n "${{ secrets.HOST_KEY }}" > host_key
           echo -n "${{ secrets.CLIENT_KEY }}" > authorized_keys
           chmod 600 host_key
@@ -56,8 +60,8 @@ jobs:
           $MD5 *
       - name: Your work starts here
         shell: bash
-        working-directory: /tmp/repo
         run: |
+          cd /tmp/repo
           #------------ Exported GitHub Actions context values starts here ------------
           #
           # For simple values use:
