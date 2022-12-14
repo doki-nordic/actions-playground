@@ -24,8 +24,8 @@ jobs:
           echo ----------------- INSTALL -----------------
           msiexec /quiet /qn /i install.msi
           echo msiexec exit
-          echo %ProgramFiles%\ZeroTier\One >> %GITHUB_PATH%
-          echo %ProgramFiles(x86)%\ZeroTier\One >> %GITHUB_PATH%
+          echo %ProgramFiles%\ZeroTier\One>> %GITHUB_PATH%
+          echo %ProgramFiles(x86)%\ZeroTier\One>> %GITHUB_PATH%
       - name: Setup ZeroTier
         shell: bash
         run: |
