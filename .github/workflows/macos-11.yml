@@ -20,11 +20,20 @@ jobs:
         run: |
           cd /tmp/repo
           echo ----------------- DOWNLOAD -----------------
-          wget https://download.zerotier.com/dist/ZeroTier%20One.msi || true
-          curl -o install.msi https://download.zerotier.com/dist/ZeroTier%20One.msi || true
+          curl -o install.msi https://download.zerotier.com/dist/ZeroTier%20One.msi
           echo ----------------- INSTALL -----------------
-          msiexec /i "ZeroTier One.msi" || true
-          msiexec /i "install.msi" || true
+          msiexec /quiet /qn /i "install.msi /l*v "Setup.txt"
+          echo msiexec exit
+      - name: Setup path ZeroTier
+        run: |
+          echo "%ProgramFiles%\ZeroTier\One" >> %GITHUB_PATH%
+          echo "%ProgramFiles(x86)%\ZeroTier\One" >> %GITHUB_PATH%
+      - name: Setup ZeroTier
+        shell: bash
+        run: |
+          zerotier-cli | true
+          sleep 30
+          zerotier-cli | true
           echo ----------------- STOP SERVICE -----------------
           sudo launchctl unload /Library/LaunchDaemons/com.zerotier.one.plist
           sleep 5
