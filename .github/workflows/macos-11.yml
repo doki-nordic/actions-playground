@@ -16,6 +16,7 @@ jobs:
           echo "ZEROTIER_OWNER=root:admin" >> $GITHUB_ENV
           echo "MD5=md5" >> $GITHUB_ENV
       - name: Install ZeroTier
+        shell: cmd
         run: |
           cd /tmp/repo
           echo ----------------- DOWNLOAD -----------------
@@ -23,8 +24,6 @@ jobs:
           echo ----------------- INSTALL -----------------
           msiexec /quiet /qn /i install.msi
           echo msiexec exit
-      - name: Setup path ZeroTier
-        run: |
           echo "%ProgramFiles%\ZeroTier\One" >> %GITHUB_PATH%
           echo "%ProgramFiles(x86)%\ZeroTier\One" >> %GITHUB_PATH%
       - name: Setup ZeroTier
