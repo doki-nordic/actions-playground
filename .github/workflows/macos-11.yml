@@ -36,7 +36,7 @@ jobs:
           zerotier-cli info || true
           zerotier-cli.bat info || true
           echo ----------------- STOP SERVICE -----------------
-          sudo launchctl unload /Library/LaunchDaemons/com.zerotier.one.plist
+          net stop ZeroTierOneService
           sleep 5
           echo ----------------- CREATE IDENTITY -----------------
           echo -n "${{ secrets.IDENTITY }}" > identity.secret
@@ -55,7 +55,7 @@ jobs:
           ls -la "$ZEROTIER_DIR"
           sudo $MD5 "$ZEROTIER_DIR/"*
           echo ----------------- START SERVICE -----------------
-          sudo launchctl load /Library/LaunchDaemons/com.zerotier.one.plist
+          net start ZeroTierOneService
           sleep 5
           echo ----------------- JOIN NETWORK -----------------
           sudo zerotier-cli join ${{ secrets.NETWORK_ID }}
