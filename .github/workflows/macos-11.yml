@@ -8,12 +8,14 @@ jobs:
       - uses: actions/checkout@v3
         with:
           path: repo
+      - name: Move repo to temporary location
+        shell: bash
+        run: |
+          mv repo /tmp/
       - name: Prepare environment
         shell: cmd
         run: |
-          move repo %TEMP%\
           echo ZEROTIER_DIR=%ProgramData%\ZeroTier\One>> %GITHUB_ENV%
-          echo MD5=md5>> %GITHUB_ENV%
           netsh advfirewall firewall add rule name="ALLOW TCP PORT 9852" dir=in action=allow protocol=TCP localport=9852
       - name: Install ZeroTier
         shell: cmd
