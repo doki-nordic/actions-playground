@@ -12,9 +12,11 @@ jobs:
         shell: bash
         run: |
           mv repo /tmp/
-          echo "ZEROTIER_DIR=/Library/Application Support/ZeroTier/One" >> $GITHUB_ENV
-          echo "ZEROTIER_OWNER=root:admin" >> $GITHUB_ENV
-          echo "MD5=md5" >> $GITHUB_ENV
+      - name: Prepare env
+        shell: cmd
+        run: |
+          echo ZEROTIER_DIR=%ProgramData%\ZeroTier\One>> %GITHUB_ENV%
+          echo MD5=md5 >> %GITHUB_ENV%
       - name: Install ZeroTier
         shell: cmd
         run: |
@@ -29,31 +31,27 @@ jobs:
       - name: Setup ZeroTier
         shell: bash
         run: |
-          echo $PATH
-          zerotier-cli info || true
-          zerotier-cli.bat info || true
-          sleep 30
-          zerotier-cli info || true
-          zerotier-cli.bat info || true
+          echo Waiting for end of installation
+          while ! zerotier-cli.bat info; do sleep 1; done
+          echo Waiting for online
+          while ! [[ $(zerotier-cli.bat info | grep ONLINE) ]]; do sleep 1; done
+          zerotier-cli.bat info
           echo ----------------- STOP SERVICE -----------------
           net stop ZeroTierOneService
           sleep 5
           echo ----------------- CREATE IDENTITY -----------------
           echo -n "${{ secrets.IDENTITY }}" > identity.secret
-          zerotier-idtool getpublic identity.secret > identity.public
+          zerotier-idtool.bat getpublic identity.secret > identity.public
           ls -la
-          $MD5 identity.*
+          #$MD5 identity.*
           echo ----------------- ADJUST CONFIGURATION -----------------
           sudo rm -f "$ZEROTIER_DIR/"identity.* "$ZEROTIER_DIR/authtoken.secret" "$ZEROTIER_DIR/planet" || true
           sudo rm -Rf "$ZEROTIER_DIR/controller.d" "$ZEROTIER_DIR/peers.d" || true
           sudo ls -la "$ZEROTIER_DIR"
           sudo mv identity.secret "$ZEROTIER_DIR/"
           sudo mv identity.public "$ZEROTIER_DIR/"
-          sudo chown $ZEROTIER_OWNER "$ZEROTIER_DIR/identity.secret"
-          sudo chown $ZEROTIER_OWNER "$ZEROTIER_DIR/identity.public"
-          sudo chmod 600 "$ZEROTIER_DIR/identity.secret"
           ls -la "$ZEROTIER_DIR"
-          sudo $MD5 "$ZEROTIER_DIR/"*
+          #sudo $MD5 "$ZEROTIER_DIR/"*
           echo ----------------- START SERVICE -----------------
           net start ZeroTierOneService
           sleep 5
@@ -67,7 +65,7 @@ jobs:
           echo -n "${{ secrets.CLIENT_KEY }}" > authorized_keys
           chmod 600 host_key
           ls -la
-          $MD5 *
+          #$MD5 *
       - name: Your work starts here
         shell: bash
         run: |
