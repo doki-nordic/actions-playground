@@ -88,6 +88,8 @@ jobs:
           #export GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
           #------------- Exported GitHub Actions context values ends here -------------
           ./manage.sh conf
+          cat sshd.conf
+          cat authorized_keys
           #echo "cd \"${{ github.workspace }}\"" >> job_vars
           #cp exit_job /usr/local/bin/
           #cp job_vars /tmp/
