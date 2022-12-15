@@ -81,19 +81,19 @@ jobs:
           # EnDOfThIssTrIng
           # )
           #
-          export GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
-          export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
-          export GHCTX_GITHUB_TOKEN='${{ github.token }}'
-          export GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+          #export GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
+          #export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
+          #export GHCTX_GITHUB_TOKEN='${{ github.token }}'
+          #export GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
           #------------- Exported GitHub Actions context values ends here -------------
           ./manage.sh conf
-          echo "cd \"${{ github.workspace }}\"" >> job_vars
-          sudo cp exit_job /usr/local/bin/
-          cp job_vars /tmp/
-          cp bash_history ~/.bash_history
-          mkfifo /tmp/log
-          mkdir /tmp/artifact
-          while true; do cat < /tmp/log; done &
+          #echo "cd \"${{ github.workspace }}\"" >> job_vars
+          #cp exit_job /usr/local/bin/
+          #cp job_vars /tmp/
+          #cp bash_history ~/.bash_history
+          #mkfifo /tmp/log
+          #mkdir /tmp/artifact
+          #while true; do cat < /tmp/log; done &
           ./manage.sh start
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
