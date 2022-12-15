@@ -106,15 +106,11 @@ jobs:
           cd %TEMP%\repo
           set LOG=\\.\pipe\log
           set ARTIFACT=C:\Users\runneradmin\AppData\Local\Temp\artifact
-          python3 scripts/env.py
-          #cp job_vars /usr/bin/ TODO
+          python3 scripts/env.py "${{ github.workspace }}"
+          copy job_vars "C:\Program Files\Git\usr\bin\"
           copy job_vars.bat C:\Windows\System32\
-          # echo "cd \"${{ github.workspace }}\"" >> job_vars TODO
           if not "${{ secrets.PASSWORD }}"=="" net user runneradmin "${{ secrets.PASSWORD }}"
-      - name: Your work starts here 2
-        shell: bash
-        run: |
-          `which sshd` -D -p 9852 -f /tmp/repo/sshd.conf
+          "C:\Program Files\Git\usr\bin\sshd.exe" -D -p 9852 -f %TEMP\repo\sshd.conf
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
         with:
