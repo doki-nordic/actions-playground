@@ -90,7 +90,7 @@ jobs:
           cat sshd.conf
           cat authorized_keys
           echo "cd \"${{ github.workspace }}\"" >> job_vars
-          #cp exit_job /usr/local/bin/
+          cp exit_job /usr/bin/
           cp job_vars /tmp/
           cp bash_history ~/.bash_history
           mkdir /tmp/artifact
