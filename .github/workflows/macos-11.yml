@@ -77,7 +77,6 @@ jobs:
           aSsIgNCtXVaR: GHCTX_GITHUB_TOKEN='${{ github.token }}'
           aSsIgNCtXVaR: GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
           EnDOfThIssTrIng
-          )
           #------------- Exported GitHub Actions context values ends here -------------
       - name: Setup bash tools
         shell: bash
