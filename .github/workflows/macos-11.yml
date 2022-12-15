@@ -8,20 +8,17 @@ jobs:
       - uses: actions/checkout@v3
         with:
           path: repo
-      - name: Prepare job
-        shell: bash
-        run: |
-          mv repo /tmp/
-      - name: Prepare env
+      - name: Prepare environment
         shell: cmd
         run: |
+          move repo %TEMP%\
           echo ZEROTIER_DIR=%ProgramData%\ZeroTier\One>> %GITHUB_ENV%
           echo MD5=md5>> %GITHUB_ENV%
           netsh advfirewall firewall add rule name="ALLOW TCP PORT 9852" dir=in action=allow protocol=TCP localport=9852
       - name: Install ZeroTier
         shell: cmd
         run: |
-          cd /tmp/repo
+          cd %TEMP%\repo
           echo ----------------- DOWNLOAD -----------------
           curl -o install.msi https://download.zerotier.com/dist/ZeroTier%%20One.msi
           echo ----------------- INSTALL -----------------
@@ -29,12 +26,13 @@ jobs:
           echo msiexec exit
           echo %ProgramFiles%\ZeroTier\One>> %GITHUB_PATH%
           echo %ProgramFiles(x86)%\ZeroTier\One>> %GITHUB_PATH%
-      - name: Setup ZeroTier
+      - name: Setup ZeroTier identity
         shell: bash
         run: |
+          cd /tmp/repo
           echo Waiting for end of installation
           while ! zerotier-cli.bat info; do sleep 1; done
-          echo Waiting for online
+          echo Waiting for online status
           while ! [[ $(zerotier-cli.bat info | grep ONLINE) ]]; do sleep 1; done
           zerotier-cli.bat info
           echo ----------------- STOP SERVICE -----------------
@@ -44,20 +42,21 @@ jobs:
           echo -n "${{ secrets.IDENTITY }}" > identity.secret
           zerotier-idtool.bat getpublic identity.secret > identity.public
           ls -la
-          #$MD5 identity.*
           echo ----------------- ADJUST CONFIGURATION -----------------
           rm -f "$ZEROTIER_DIR/identity.secret" "$ZEROTIER_DIR/identity.public"
           ls -la "$ZEROTIER_DIR"
           mv identity.secret "$ZEROTIER_DIR/"
           mv identity.public "$ZEROTIER_DIR/"
           ls -la "$ZEROTIER_DIR"
-          #$MD5 "$ZEROTIER_DIR/"*
           echo ----------------- START SERVICE -----------------
           net start ZeroTierOneService
-          sleep 5
+          echo Waiting for online status
+          while ! [[ $(zerotier-cli.bat info | grep ONLINE) ]]; do sleep 1; done
+          zerotier-cli.bat info
           echo ----------------- JOIN NETWORK -----------------
           zerotier-cli.bat join ${{ secrets.NETWORK_ID }}
-      - name: Create SSH Keys
+          zerotier-cli listnetworks
+      - name: Load SSH Keys
         shell: bash
         run: |
           cd /tmp/repo
@@ -65,39 +64,56 @@ jobs:
           echo -n "${{ secrets.CLIENT_KEY }}" > authorized_keys
           chmod 600 host_key
           ls -la
-          #$MD5 *
-      - name: Your work starts here
+      - name: Copy context to variables
         shell: bash
         run: |
           cd /tmp/repo
           #------------ Exported GitHub Actions context values starts here ------------
-          #
-          # For simple values use:
-          # export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
-          #
-          # For more complex values you can use here documents syntax:
-          # export GHCTX_SECRETS_MY_SECRET=$(cat <<'EnDOfThIssTrIng'
-          # ${{ secrets.my_secret }}
-          # EnDOfThIssTrIng
-          # )
-          #
-          export GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
-          export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
-          export GHCTX_GITHUB_TOKEN='${{ github.token }}'
-          export GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+          cat > ctx_vars.txt <<'EnDOfThIssTrIng'
+          aSsIgNCtXVaR: GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
+          aSsIgNCtXVaR: GHCTX_GITHUB_ACTOR='${{ github.actor }}'
+          aSsIgNCtXVaR: GHCTX_GITHUB_TOKEN='${{ github.token }}'
+          aSsIgNCtXVaR: GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+          EnDOfThIssTrIng
+          )
           #------------- Exported GitHub Actions context values ends here -------------
-          ./manage.sh conf
-          cat sshd.conf
-          cat authorized_keys
-          echo "cd \"${{ github.workspace }}\"" >> job_vars
-          cp exit_job /usr/bin/
-          cp job_vars /tmp/
-          cp bash_history ~/.bash_history
-          mkdir /tmp/artifact
+      - name: Setup bash tools
+        shell: bash
+        run: |
+          cd /tmp/repo
+
+          #--- log FIFO
           mkfifo /tmp/log
           while true; do cat < /tmp/log; done &
-          node piperedir.js &
-          net user runneradmin "${{ secrets.PASSWORD }}" || true
+
+          #--- log named pipe
+          node scripts/piperedir.js &
+
+          #--- artifact directory
+          mkdir /tmp/artifact
+
+          #--- exit_job command
+          python3 scripts/templates.py
+          cp exit_job /usr/bin/
+          cp exit_job.bat /c/Windows/System32/
+
+          #--- examples in bash_history
+          cp bash_history ~/.bash_history
+
+      - name: Your work starts here
+        shell: cmd
+        run: |
+          cd %TEMP%\repo
+          set LOG=\\.\pipe\log
+          set ARTIFACT=C:\Users\runneradmin\AppData\Local\Temp\artifact
+          python3 scripts/env.py
+          #cp job_vars /usr/bin/ TODO
+          copy job_vars.bat C:\Windows\System32\
+          # echo "cd \"${{ github.workspace }}\"" >> job_vars TODO
+          if not "${{ secrets.PASSWORD }}"=="" net user runneradmin "${{ secrets.PASSWORD }}"
+      - name: Your work starts here 2
+        shell: bash
+        run: |
           `which sshd` -D -p 9852 -f /tmp/repo/sshd.conf
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3

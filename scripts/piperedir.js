@@ -1,3 +1,7 @@
+/*
+ * The script creates Windows named pipe server "\\.\pipe\log" and redirects all
+ * incoming data to stdout.
+ */
 
 const net = require('net');
 

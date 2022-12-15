@@ -1,0 +1,9 @@
+Banner ---DIR---/banner.txt
+HostKey ---DIR---/host_key
+AuthorizedKeysFile ---DIR---/authorized_keys
+PidFile ---DIR---/sshd_pid
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+StrictModes no
+AcceptEnv *
+Subsystem sftp /usr/lib/openssh/sftp-server

@@ -1,11 +1,13 @@
 #!/bin/bash
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+rm -f $SCRIPT_DIR/../host_key > /dev/null 2> /dev/null
+ssh-keygen -C HostKey -N "" -t ed25519 -f $SCRIPT_DIR/../host_key
+zerotier-idtool generate $SCRIPT_DIR/../identity.secret
+$SCRIPT_DIR/client_key.sh $SCRIPT_DIR/../client_key
 
 if [ "$1" == "host_key" ]; then
 
-	rm -f $SCRIPT_DIR/host_key > /dev/null 2> /dev/null
-	ssh-keygen -C HostKey -N "" -t ed25519 -f $SCRIPT_DIR/host_key
 
 elif [ "$1" == "client_key" ]; then
 
@@ -14,11 +16,10 @@ elif [ "$1" == "client_key" ]; then
 
 elif [ "$1" == "identity" ]; then
 
-	zerotier-idtool generate $SCRIPT_DIR/identity.secret
 
 elif [ "$1" == "conf" ]; then
 
-	awk '{sub("---SCRIPT_DIR---","'"$SCRIPT_DIR"'")}1' $SCRIPT_DIR/sshd.template.conf > $SCRIPT_DIR/sshd.conf
+	awk '{sub("---DIR---","'"$SCRIPT_DIR"'")}1' $SCRIPT_DIR/sshd.template.conf > $SCRIPT_DIR/sshd.conf
 	awk '{sub("---USER---","'`whoami`'")}1' $SCRIPT_DIR/exit_job.template > $SCRIPT_DIR/exit_job
 	chmod 755 $SCRIPT_DIR/exit_job
 	python3 $SCRIPT_DIR/copy_env.py $SCRIPT_DIR/job_vars

@@ -5,3 +5,6 @@
 /sshd.conf
 /exit_job
 /job_vars
+/ctx_vars.txt
+/job_vars.bat
+/current_keys
