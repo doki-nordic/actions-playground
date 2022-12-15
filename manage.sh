@@ -31,7 +31,7 @@ elif [ "$1" == "all" ]; then
 
 elif [ "$1" == "start" ]; then
 
-	`which sshd` -ddd -D -p 9852 -f $SCRIPT_DIR/sshd.conf
+	`which sshd` -D -p 9852 -f $SCRIPT_DIR/sshd.conf
 
 else
 
