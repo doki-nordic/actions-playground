@@ -7,13 +7,13 @@ Things that you may want to know:
 
  * "exit_job" command will terminate GitHub Actions job that you are
    currently using. As the result, entire workflow will end with a success.
- * ". /tmp/job_vars" command will source all environment variables that
+ * ". job_vars" command will source all environment variables that
    are available inside a job. It will also change current directory to the
    job's workspace directory.
- * "/tmp/log" FIFO allows you to send messages to the Action log, e.g.
-   "history > /tmp/log" will put your bash history on the log. This may
+ * "$LOG" FIFO allows you to send messages to the Action log, e.g.
+   "history > $LOG" will put your bash history on the log. This may
    be useful for creating a workflow with commands that you used.
- * "/tmp/artifact" directory will be available as an action artifact.
+ * "$ARTIFACT" directory will be available as an action artifact.
    Put there anything you want to download later.
  * "GHCTX_***" environment variable sourced from "/tmp/job_vars" are taken
    from the GitHub Actions Contexts, e.g. "GHCTX_SECRETS_GITHUB_TOKEN"
@@ -23,3 +23,9 @@ Things that you may want to know:
 
 You have some examples of commands in your bash history (arrow up key).
 
+On Window with different shell:
+
+ * exit_job the same
+ * job_vars instead of ". job_vars"
+ * %LOG% instead of $LOG <------- NOOOOO! FIFO is different from named pipe, but maybe named pipe will work for both cases?
+ * %ARTIFACT% instead of $ARTIFACT <-------- Check if path translation will work here, if not, old approach will be needed: bash: /tmp/artifact, other: %ARTIFACT%
