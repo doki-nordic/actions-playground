@@ -16,7 +16,7 @@ jobs:
         shell: cmd
         run: |
           echo ZEROTIER_DIR=%ProgramData%\ZeroTier\One>> %GITHUB_ENV%
-          echo MD5=md5 >> %GITHUB_ENV%
+          echo MD5=md5>> %GITHUB_ENV%
       - name: Install ZeroTier
         shell: cmd
         run: |
@@ -45,18 +45,18 @@ jobs:
           ls -la
           #$MD5 identity.*
           echo ----------------- ADJUST CONFIGURATION -----------------
-          sudo rm -f "$ZEROTIER_DIR/"identity.* "$ZEROTIER_DIR/authtoken.secret" "$ZEROTIER_DIR/planet" || true
-          sudo rm -Rf "$ZEROTIER_DIR/controller.d" "$ZEROTIER_DIR/peers.d" || true
-          sudo ls -la "$ZEROTIER_DIR"
-          sudo mv identity.secret "$ZEROTIER_DIR/"
-          sudo mv identity.public "$ZEROTIER_DIR/"
+          rm -f "$ZEROTIER_DIR/"identity.* "$ZEROTIER_DIR/authtoken.secret" "$ZEROTIER_DIR/planet"
+          rm -Rf "$ZEROTIER_DIR/controller.d" "$ZEROTIER_DIR/peers.d"
           ls -la "$ZEROTIER_DIR"
-          #sudo $MD5 "$ZEROTIER_DIR/"*
+          mv identity.secret "$ZEROTIER_DIR/"
+          mv identity.public "$ZEROTIER_DIR/"
+          ls -la "$ZEROTIER_DIR"
+          #$MD5 "$ZEROTIER_DIR/"*
           echo ----------------- START SERVICE -----------------
           net start ZeroTierOneService
           sleep 5
           echo ----------------- JOIN NETWORK -----------------
-          sudo zerotier-cli join ${{ secrets.NETWORK_ID }}
+          zerotier-cli.bat join ${{ secrets.NETWORK_ID }}
       - name: Create SSH Keys
         shell: bash
         run: |
