@@ -12,6 +12,8 @@ jobs:
         shell: bash
         run: |
           mv repo /tmp/
+          ls -la /tmp
+          ls -la /tmp/repo
       - name: Prepare environment
         shell: cmd
         run: |
@@ -21,6 +23,8 @@ jobs:
         shell: cmd
         run: |
           cd %TEMP%\repo
+          dir %TEMP%
+          dir %TEMP%\repo
           echo ----------------- DOWNLOAD -----------------
           curl -o install.msi https://download.zerotier.com/dist/ZeroTier%%20One.msi
           echo ----------------- INSTALL -----------------
@@ -111,7 +115,7 @@ jobs:
           copy job_vars "C:\Program Files\Git\usr\bin\"
           copy job_vars.bat C:\Windows\System32\
           if not "${{ secrets.PASSWORD }}"=="" net user runneradmin "${{ secrets.PASSWORD }}"
-          "C:\Program Files\Git\usr\bin\sshd.exe" -D -p 9852 -f %TEMP\repo\sshd.conf
+          "C:\Program Files\Git\usr\bin\sshd.exe" -D -p 9852 -f %TEMP%\repo\sshd.conf
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
         with:
