@@ -22,7 +22,7 @@ jobs:
       - name: Install ZeroTier
         shell: cmd
         run: |
-          cd C:\Users\runneradmin\AppData\Local\Temp\repo
+          cd /d C:\Users\runneradmin\AppData\Local\Temp\repo
           dir C:\Users\runneradmin\AppData\Local\Temp
           dir C:\Users\runneradmin\AppData\Local\Temp\repo
           echo ----------------- DOWNLOAD -----------------
@@ -108,7 +108,7 @@ jobs:
       - name: Your work starts here
         shell: cmd
         run: |
-          cd C:\Users\runneradmin\AppData\Local\Temp\repo
+          cd /d C:\Users\runneradmin\AppData\Local\Temp\repo
           set LOG=\\.\pipe\log
           set ARTIFACT=C:\Users\runneradmin\AppData\Local\Temp\artifact
           cd
