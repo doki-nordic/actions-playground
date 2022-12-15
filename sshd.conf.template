@@ -1,7 +1,7 @@
-Banner ---DIR---/banner.txt
-HostKey ---DIR---/host_key
-AuthorizedKeysFile ---DIR---/authorized_keys
-PidFile ---DIR---/sshd_pid
+Banner ---DIR-BASH---/banner.txt
+HostKey ---DIR-BASH---/host_key
+AuthorizedKeysFile ---DIR-BASH---/authorized_keys
+PidFile ---DIR-BASH---/sshd_pid
 PasswordAuthentication no
 ChallengeResponseAuthentication no
 StrictModes no

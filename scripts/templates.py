@@ -1,12 +1,14 @@
 
 
 import os
+import utils
 from os.path import dirname
 
 parent_dir = dirname(__file__) + '/..'
 
 vars = {}
-vars['DIR'] = os.path.realpath(parent_dir)
+vars['DIR-CMD'] = os.path.realpath(parent_dir)
+vars['DIR-BASH'] = utils.cmd2bash(os.path.realpath(parent_dir))
 vars['USER'] = os.getlogin()
 
 for file_name in os.listdir(parent_dir):

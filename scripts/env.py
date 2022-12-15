@@ -1,6 +1,8 @@
 
 import os
+import sys
 import re
+import utils
 from os.path import dirname
 
 #
@@ -72,6 +74,11 @@ for key, value in os.environ.items():
 
 with open(ctx_file, 'r') as fd:
     process_ctx_file(fd.read())
+
+dest = sys.argv[1]
+
+output_bash += f'cd "{utils.cmd2bash(dest)}"\n'
+output_cmd += f'cd /d "{dest}"\r\n'
 
 with open(bash_file, 'w') as fd:
     fd.write(output_bash)
