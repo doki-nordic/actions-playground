@@ -29,10 +29,6 @@ elif [ "$1" == "all" ]; then
 	$SCRIPT_DIR/manage.sh client_key $SCRIPT_DIR/client_key
 	$SCRIPT_DIR/manage.sh identity
 
-elif [ "$1" == "start" ]; then
-
-	`which sshd` -D -p 9852 -f $SCRIPT_DIR/sshd.conf
-
 else
 
 	echo "Usage:"

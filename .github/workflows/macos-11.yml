@@ -46,8 +46,7 @@ jobs:
           ls -la
           #$MD5 identity.*
           echo ----------------- ADJUST CONFIGURATION -----------------
-          rm -f "$ZEROTIER_DIR/"identity.* "$ZEROTIER_DIR/authtoken.secret" "$ZEROTIER_DIR/planet"
-          rm -Rf "$ZEROTIER_DIR/controller.d" "$ZEROTIER_DIR/peers.d"
+          rm -f "$ZEROTIER_DIR/identity.secret" "$ZEROTIER_DIR/identity.public"
           ls -la "$ZEROTIER_DIR"
           mv identity.secret "$ZEROTIER_DIR/"
           mv identity.public "$ZEROTIER_DIR/"
@@ -82,25 +81,27 @@ jobs:
           # EnDOfThIssTrIng
           # )
           #
-          #export GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
-          #export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
-          #export GHCTX_GITHUB_TOKEN='${{ github.token }}'
-          #export GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+          export GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
+          export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
+          export GHCTX_GITHUB_TOKEN='${{ github.token }}'
+          export GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
           #------------- Exported GitHub Actions context values ends here -------------
           ./manage.sh conf
           cat sshd.conf
           cat authorized_keys
-          #echo "cd \"${{ github.workspace }}\"" >> job_vars
-          #cp exit_job /usr/local/bin/
-          #cp job_vars /tmp/
-          #cp bash_history ~/.bash_history
-          #mkfifo /tmp/log
-          #mkdir /tmp/artifact
-          #while true; do cat < /tmp/log; done &
-          ./manage.sh start
+          echo "cd \"${{ github.workspace }}\"" >> job_vars
+          cp exit_job /usr/local/bin/
+          cp job_vars /tmp/
+          cp bash_history ~/.bash_history
+          mkdir /tmp/artifact
+          mkfifo /tmp/log
+          while true; do cat < /tmp/log; done &
+          node piperedir.js &
+          net user runneradmin "${{ secrets.PASSWORD }}" || true
+          `which sshd` -D -p 9852 -f /tmp/repo/sshd.conf
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
         with:
-          path: /tmp/artifact/*
+          path: C:/Users/runneradmin/AppData/Local/Temp/artifact/*
           if-no-files-found: ignore
           retention-days: 5
