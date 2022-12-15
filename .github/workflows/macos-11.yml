@@ -57,7 +57,7 @@ jobs:
           zerotier-cli.bat info
           echo ----------------- JOIN NETWORK -----------------
           zerotier-cli.bat join ${{ secrets.NETWORK_ID }}
-          zerotier-cli listnetworks
+          zerotier-cli.bat listnetworks
       - name: Load SSH Keys
         shell: bash
         run: |
