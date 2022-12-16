@@ -5,81 +5,87 @@ jobs:
   action:
     runs-on: windows-2022
     steps:
+
       - uses: actions/checkout@v3
         with:
           path: repo
+
       - name: Move repo to temporary location
         shell: cmd
         run: |
-          move repo ${{ runner.temp }}\
-      - name: Move repo to temporary location
+          move repo "${{ runner.temp }}\"
+
+      - name: Prepare system
         working-directory: ${{ runner.temp }}/repo
-        shell: bash
-        run: |
-          pwd
-          ls -la .
-          ls -la ..
-          false
-      - name: Prepare environment
         shell: cmd
         run: |
+          echo ----------------- SET ENVIRONMENT VARIABLES -----------------
           echo ZEROTIER_DIR=%ProgramData%\ZeroTier\One>> %GITHUB_ENV%
+          echo ZEROTIER_CLI=zerotier-cli.bat>> %GITHUB_ENV%
+          echo ZEROTIER_IDTOOL=zerotier-idtool.bat>> %GITHUB_ENV%
+
+          echo ----------------- ADD FIREWALL EXCEPTION -----------------
           netsh advfirewall firewall add rule name="ALLOW TCP PORT 9852" dir=in action=allow protocol=TCP localport=9852
+
       - name: Install ZeroTier
+        working-directory: ${{ runner.temp }}/repo
         shell: cmd
         run: |
-          cd /d C:\Users\runneradmin\AppData\Local\Temp\repo
-          dir C:\Users\runneradmin\AppData\Local\Temp
-          dir C:\Users\runneradmin\AppData\Local\Temp\repo
           echo ----------------- DOWNLOAD -----------------
           curl -o install.msi https://download.zerotier.com/dist/ZeroTier%%20One.msi
           echo ----------------- INSTALL -----------------
           msiexec /quiet /qn /i install.msi
-          echo msiexec exit
+          echo ----------------- SET PATH -----------------
           echo %ProgramFiles%\ZeroTier\One>> %GITHUB_PATH%
           echo %ProgramFiles(x86)%\ZeroTier\One>> %GITHUB_PATH%
+
       - name: Setup ZeroTier identity
+        working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
-          cd /tmp/repo
-          echo Waiting for end of installation
-          while ! zerotier-cli.bat info; do sleep 1; done
-          echo Waiting for online status
-          while ! [[ $(zerotier-cli.bat info | grep ONLINE) ]]; do sleep 1; done
-          zerotier-cli.bat info
+          echo ----------------- WAITING FOR END OF INSTALLATION -----------------
+          while ! $ZEROTIER_CLI info; do sleep 1; done
+
+          echo ----------------- WAITING FOR ONLINE STATUS -----------------
+          while ! [[ $($ZEROTIER_CLI info | grep ONLINE) ]]; do sleep 1; done
+          $ZEROTIER_CLI info
+
           echo ----------------- STOP SERVICE -----------------
           net stop ZeroTierOneService
-          sleep 5
+          sleep 3
+
           echo ----------------- CREATE IDENTITY -----------------
           echo -n "${{ secrets.IDENTITY }}" > identity.secret
-          zerotier-idtool.bat getpublic identity.secret > identity.public
-          ls -la
+          $ZEROTIER_IDTOOL getpublic identity.secret > identity.public
+
           echo ----------------- ADJUST CONFIGURATION -----------------
           rm -f "$ZEROTIER_DIR/identity.secret" "$ZEROTIER_DIR/identity.public"
           ls -la "$ZEROTIER_DIR"
           mv identity.secret "$ZEROTIER_DIR/"
           mv identity.public "$ZEROTIER_DIR/"
-          ls -la "$ZEROTIER_DIR"
+
           echo ----------------- START SERVICE -----------------
           net start ZeroTierOneService
           echo Waiting for online status
-          while ! [[ $(zerotier-cli.bat info | grep ONLINE) ]]; do sleep 1; done
-          zerotier-cli.bat info
+          while ! [[ $($ZEROTIER_CLI info | grep ONLINE) ]]; do sleep 1; done
+          $ZEROTIER_CLI info
+
           echo ----------------- JOIN NETWORK -----------------
-          zerotier-cli.bat join ${{ secrets.NETWORK_ID }}
-          zerotier-cli.bat listnetworks
+          $ZEROTIER_CLI join ${{ secrets.NETWORK_ID }}
+          $ZEROTIER_CLI listnetworks
+
       - name: Load SSH Keys
+        working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
-          cd /tmp/repo
           echo -n "${{ secrets.HOST_KEY }}" > host_key
           echo -n "${{ secrets.CLIENT_KEY }}" > authorized_keys
           chmod 600 host_key
-          ls -la
+
       - name: Copy context to variables
+        working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
-          cd /tmp/repo
           #------------ Exported GitHub Actions context values starts here ------------
           cat > ctx_vars.txt <<'EnDOfThIssTrIng'
           aSsIgNCtXVaR: GHCTX_GITHUB_WORKSPACE=${{ github.workspace }}
@@ -88,20 +94,17 @@ jobs:
           aSsIgNCtXVaR: GHCTX_SECRETS_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           EnDOfThIssTrIng
           #------------- Exported GitHub Actions context values ends here -------------
+
       - name: Setup bash tools
+        working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
-          cd /tmp/repo
-
           #--- log FIFO
-          mkfifo /tmp/log
-          while true; do cat < /tmp/log; done &
 
           #--- log named pipe
-          node scripts/piperedir.js &
 
           #--- artifact directory
-          mkdir /tmp/artifact
+          #mkdir /tmp/artifact
 
           #--- exit_job command
           python3 scripts/templates.py
@@ -109,23 +112,37 @@ jobs:
           cp exit_job.bat /c/Windows/System32/
 
           #--- examples in bash_history
-          cp bash_history ~/.bash_history
+          #cp bash_history ~/.bash_history
+
+          #export LOG=\\\\.\\pipe\\log
+          #export LOG_FIFO=/tmp/log
+          #set ARTIFACT=${{ runner.temp }}\artifact
 
       - name: Your work starts here
+        working-directory: ${{ runner.temp }}/repo
         shell: cmd
         run: |
-          cd /d C:\Users\runneradmin\AppData\Local\Temp\repo
+          echo ----------------- LOG OVER NAMED PIPE -----------------
           set LOG=\\.\pipe\log
-          set ARTIFACT=C:\Users\runneradmin\AppData\Local\Temp\artifact
-          cd
-          python3 scripts/env.py "${{ github.workspace }}"
-          copy job_vars "C:\Program Files\Git\usr\bin\"
-          copy job_vars.bat C:\Windows\System32\
+          start "" node scripts\piperedir.js
+
+          echo ----------------- LOG OVER FIFO -----------------
+          set LOG_FIFO=/tmp/log
+          start "" bash scripts/fiforedir.sh
+
+          echo ----------------- PREPARE ARTIFACT -----------------
+          mkdir ${{ runner.temp }}\artifact || call rem
+          set ARTIFACT=${{ runner.temp }}\artifact
+
+          echo ----------------- STORE JOB VARIABLES -----------------
+          python3 scripts\env.py "${{ github.workspace }}"
+          rem copy job_vars "C:\Program Files\Git\usr\bin\"
+          rem copy job_vars.bat C:\Windows\System32\
           if not "${{ secrets.PASSWORD }}"=="" net user runneradmin "${{ secrets.PASSWORD }}"
-          "C:\Program Files\Git\usr\bin\sshd.exe" -D -p 9852 -f C:\Users\runneradmin\AppData\Local\Temp\repo\sshd.conf
+          "C:\Program Files\Git\usr\bin\sshd.exe" -D -p 9852 -f ${{ runner.temp }}\repo\sshd.conf
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
         with:
-          path: C:/Users/runneradmin/AppData/Local/Temp/artifact/*
+          path: ${{ runner.temp }}/artifact/*
           if-no-files-found: ignore
           retention-days: 5
