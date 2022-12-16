@@ -7,16 +7,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          path: ${{ runner.temp }}/repo
+          path: repo
+      - name: Move repo to temporary location
+        shell: cmd
+        run: |
+          move repo ${{ runner.temp }}\
       - name: Move repo to temporary location
         working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
           pwd
-          #mv repo /tmp/
+          ls -la .
+          ls -la ..
           false
-          ls -la /tmp
-          ls -la /tmp/repo
       - name: Prepare environment
         shell: cmd
         run: |
