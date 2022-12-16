@@ -7,11 +7,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          path: repo
+          path: ${{ runner.temp }}/repo
       - name: Move repo to temporary location
+        working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
-          mv repo /tmp/
+          pwd
+          #mv repo /tmp/
+          false
           ls -la /tmp
           ls -la /tmp/repo
       - name: Prepare environment
@@ -76,10 +79,10 @@ jobs:
           cd /tmp/repo
           #------------ Exported GitHub Actions context values starts here ------------
           cat > ctx_vars.txt <<'EnDOfThIssTrIng'
-          aSsIgNCtXVaR: GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
-          aSsIgNCtXVaR: GHCTX_GITHUB_ACTOR='${{ github.actor }}'
-          aSsIgNCtXVaR: GHCTX_GITHUB_TOKEN='${{ github.token }}'
-          aSsIgNCtXVaR: GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
+          aSsIgNCtXVaR: GHCTX_GITHUB_WORKSPACE=${{ github.workspace }}
+          aSsIgNCtXVaR: GHCTX_GITHUB_ACTOR=${{ github.actor }}
+          aSsIgNCtXVaR: GHCTX_GITHUB_TOKEN=${{ github.token }}
+          aSsIgNCtXVaR: GHCTX_SECRETS_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           EnDOfThIssTrIng
           #------------- Exported GitHub Actions context values ends here -------------
       - name: Setup bash tools
