@@ -9,3 +9,6 @@
 /job_vars.bat
 /current_keys
 __pycache__
+/keys.zip
+/secrets.*
+/ssh_host_*
