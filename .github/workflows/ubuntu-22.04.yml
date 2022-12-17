@@ -25,6 +25,7 @@ jobs:
           echo After read: $PASSWORD
           export PASSWORD
           echo After export: $PASSWORD
+          pip install --user pyzipper
           python scripts/keys_zip.py ${{ inputs.client_keys_count }}
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
