@@ -18,9 +18,10 @@ jobs:
       - name: Generate Keys
         run: |
           echo Before
-          read -r -d '' PASSWORD <<'EnDOfThIssTrIng'
+          (read -r -d '' PASSWORD <<'EnDOfThIssTrIng'
           ${{ secrets.PASSWORD }}
           EnDOfThIssTrIng
+          )
           echo After read: $PASSWORD
           export PASSWORD
           echo After export: $PASSWORD
