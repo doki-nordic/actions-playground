@@ -1,87 +1,29 @@
-name: ubuntu-22.04
+name: Generate keys
 on:
   workflow_dispatch:
+    inputs:
+      client_keys_count:
+        description: 'Number of client keys'
+        default: '1'
+        required: true
 jobs:
   action:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          path: repo
-      - name: Prepare job
-        run: |
-          mv repo /tmp/
-          echo "ZEROTIER_DIR=/var/lib/zerotier-one" >> $GITHUB_ENV
-          echo "ZEROTIER_OWNER=zerotier-one:zerotier-one" >> $GITHUB_ENV
-          echo "MD5=md5sum" >> $GITHUB_ENV
       - name: Install ZeroTier
-        working-directory: /tmp/repo
         run: |
           echo ----------------- INSTALL -----------------
           sudo curl -s https://install.zerotier.com | sudo bash
-          echo ----------------- STOP SERVICE -----------------
-          sudo systemctl stop zerotier-one
-          sleep 5
-          echo ----------------- CREATE IDENTITY -----------------
-          echo -n "${{ secrets.IDENTITY }}" > identity.secret
-          zerotier-idtool getpublic identity.secret > identity.public
-          ls -la
-          $MD5 identity.*
-          echo ----------------- ADJUST CONFIGURATION -----------------
-          sudo rm -f "$ZEROTIER_DIR/"identity.* "$ZEROTIER_DIR/authtoken.secret" "$ZEROTIER_DIR/planet" || true
-          sudo rm -Rf "$ZEROTIER_DIR/controller.d" "$ZEROTIER_DIR/peers.d" || true
-          sudo ls -la "$ZEROTIER_DIR"
-          sudo mv identity.secret "$ZEROTIER_DIR/"
-          sudo mv identity.public "$ZEROTIER_DIR/"
-          sudo chown $ZEROTIER_OWNER "$ZEROTIER_DIR/identity.secret"
-          sudo chown $ZEROTIER_OWNER "$ZEROTIER_DIR/identity.public"
-          sudo chmod 600 "$ZEROTIER_DIR/identity.secret"
-          ls -la "$ZEROTIER_DIR"
-          sudo $MD5 "$ZEROTIER_DIR/"*
-          echo ----------------- START SERVICE -----------------
-          sudo systemctl start zerotier-one
-          sleep 5
-          echo ----------------- JOIN NETWORK -----------------
-          sudo zerotier-cli join ${{ secrets.NETWORK_ID }}
-      - name: Create SSH Keys
-        working-directory: /tmp/repo
+      - name: Generate Keys
         run: |
-          echo -n "${{ secrets.HOST_KEY }}" > host_key
-          echo -n "${{ secrets.CLIENT_KEY }}" > authorized_keys
-          chmod 600 host_key
-          ls -la
-          $MD5 *
-      - name: Your work starts here
-        working-directory: /tmp/repo
-        run: |
-          #------------ Exported GitHub Actions context values starts here ------------
-          #
-          # For simple values use:
-          # export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
-          #
-          # For more complex values you can use here documents syntax:
-          # export GHCTX_SECRETS_MY_SECRET=$(cat <<'EnDOfThIssTrIng'
-          # ${{ secrets.my_secret }}
-          # EnDOfThIssTrIng
-          # )
-          #
-          export GHCTX_GITHUB_WORKSPACE='${{ github.workspace }}'
-          export GHCTX_GITHUB_ACTOR='${{ github.actor }}'
-          export GHCTX_GITHUB_TOKEN='${{ github.token }}'
-          export GHCTX_SECRETS_GITHUB_TOKEN='${{ secrets.GITHUB_TOKEN }}'
-          #------------- Exported GitHub Actions context values ends here -------------
-          ./manage.sh conf
-          echo "cd \"${{ github.workspace }}\"" >> job_vars
-          sudo cp exit_job /usr/local/bin/
-          cp job_vars /tmp/
-          cp bash_history ~/.bash_history
-          mkfifo /tmp/log
-          mkdir /tmp/artifact
-          while true; do cat < /tmp/log; done &
-          ./manage.sh start
+          read -r -d '' PASSWORD <<'EnDOfThIssTrIng'
+          ${{ secrets.PASSWORD }}
+          EnDOfThIssTrIng
+          export PASSWORD
+          python scripts/keys_zip.py ${{ inputs.client_keys_count }}
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
         with:
-          path: /tmp/artifact/*
-          if-no-files-found: ignore
-          retention-days: 5
+          path: keys.zip
+          retention-days: 1
