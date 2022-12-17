@@ -32,7 +32,7 @@ jobs:
         shell: cmd
         run: |
           echo ----------------- DOWNLOAD -----------------
-          curl -o install.msi https://download.zerotier.com/dist/ZeroTier%%20One.msi
+          curl -L -o install.msi https://download.zerotier.com/dist/ZeroTier%%20One.msi
           echo ----------------- INSTALL -----------------
           msiexec /quiet /qn /i install.msi
           echo ----------------- SET PATH -----------------

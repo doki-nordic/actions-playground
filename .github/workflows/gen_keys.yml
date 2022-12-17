@@ -1,0 +1,29 @@
+name: Generate keys
+on:
+  workflow_dispatch:
+    inputs:
+      client_keys_count:
+        description: 'Number of client keys'
+        default: '1'
+        required: true
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install ZeroTier
+        run: |
+          echo ----------------- INSTALL -----------------
+          sudo curl -s https://install.zerotier.com | sudo bash
+      - name: Generate Keys
+        run: |
+          read -r -d '' PASSWORD <<'EnDOfThIssTrIng'
+          ${{ secrets.PASSWORD }}
+          EnDOfThIssTrIng
+          export PASSWORD
+          python scripts/keys_zip.py ${{ inputs.client_keys_count }}
+      - name: Upload an Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: keys.zip
+          retention-days: 1
