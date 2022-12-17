@@ -17,10 +17,13 @@ jobs:
           sudo curl -s https://install.zerotier.com | sudo bash
       - name: Generate Keys
         run: |
+          echo Before
           read -r -d '' PASSWORD <<'EnDOfThIssTrIng'
           ${{ secrets.PASSWORD }}
           EnDOfThIssTrIng
+          echo After read: $PASSWORD
           export PASSWORD
+          echo After export: $PASSWORD
           python scripts/keys_zip.py ${{ inputs.client_keys_count }}
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
