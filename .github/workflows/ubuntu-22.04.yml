@@ -13,18 +13,14 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install ZeroTier
         run: |
-          echo ----------------- INSTALL -----------------
           sudo curl -s https://install.zerotier.com | sudo bash
       - name: Generate Keys
         run: |
-          echo Before
           { read -r -d '' PASSWORD <<'EnDOfThIssTrIng'
           ${{ secrets.PASSWORD }}
           EnDOfThIssTrIng
           } || true
-          echo After read: $PASSWORD
           export PASSWORD
-          echo After export: $PASSWORD
           pip install --user pyzipper
           python scripts/keys_zip.py ${{ inputs.client_keys_count }}
       - name: Upload an Artifact
