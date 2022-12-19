@@ -24,6 +24,9 @@ jobs:
           echo ZEROTIER_CLI=zerotier-cli.bat>> %GITHUB_ENV%
           echo ZEROTIER_IDTOOL=zerotier-idtool.bat>> %GITHUB_ENV%
 
+          echo ----------------- SET PASSWORD -----------------
+          if not "${{ secrets.PASSWORD }}"=="" net user runneradmin "${{ secrets.PASSWORD }}"
+
       - name: Write SSH keys
         working-directory: ${{ runner.temp }}/repo
         shell: bash
