@@ -55,6 +55,7 @@ jobs:
           rm -f /c/ProgramData/ssh/ssh_host_*_key
           rm -f /c/ProgramData/ssh/ssh_host_*_key.pub
           cp ssh_host_*_key /c/ProgramData/ssh/
+          for f in /c/ProgramData/ssh/ssh_host_*_key; do ssh-keygen -y -f $f > $f.pub; done
           net start sshd
 
       - name: Install ZeroTier
