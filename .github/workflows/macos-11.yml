@@ -34,10 +34,9 @@ jobs:
           cat > authorized_keys <<'EnDOfThIssTrIng'
           ${{ secrets.CLIENT_KEYS }}
           EnDOfThIssTrIng
-          cat > ssh_host_ed25519_key <<'EnDOfThIssTrIng'
-          ${{ secrets.HOST_KEY }}
-          EnDOfThIssTrIng
-          chmod 600 ssh_host_ed25519_key
+          ${{ secrets.HOST_KEYS }}
+          for f in /c/ProgramData/ssh/ssh_host_*_key; do ssh-keygen -y -f $f > $f.pub; done
+          chmod 600 ssh_host_*_key
 
       - name: Install Windows SSH
         working-directory: ${{ runner.temp }}/repo
@@ -56,9 +55,12 @@ jobs:
           cp authorized_keys /c/ProgramData/ssh/administrators_authorized_keys
           rm -f /c/ProgramData/ssh/ssh_host_*_key
           rm -f /c/ProgramData/ssh/ssh_host_*_key.pub
-          cp ssh_host_ed25519_key /c/ProgramData/ssh/
-          ssh-keygen -y -f ssh_host_ed25519_key > ssh_host_ed25519_key.pub
-          echo -n $'\r\nHostKey __PROGRAMDATA__/ssh/ssh_host_ed25519_key\r\n' >> /c/ProgramData/ssh/sshd_config
+          cp ssh_host_*_key /c/ProgramData/ssh/
+          cp ssh_host_*_key.pub /c/ProgramData/ssh/
+          echo -n $'\r\n' > conf.tmp
+          for f in ssh_host_*_key; do echo -n HostKey __PROGRAMDATA__/ssh/$f >> conf.tmp; echo -n $'\r\n' >> conf.tmp; done
+          cp /c/ProgramData/ssh/sshd_config ./sshd_config.tmp
+          cat conf.tmp sshd_config.tmp > /c/ProgramData/ssh/sshd_config
           net start sshd
 
       - name: Install ZeroTier
