@@ -24,9 +24,6 @@ jobs:
           echo ZEROTIER_CLI=zerotier-cli.bat>> %GITHUB_ENV%
           echo ZEROTIER_IDTOOL=zerotier-idtool.bat>> %GITHUB_ENV%
 
-          echo ----------------- ADD FIREWALL EXCEPTION -----------------
-          netsh advfirewall firewall add rule name="ALLOW TCP PORT 9852" dir=in action=allow protocol=TCP localport=9852
-
       - name: Write SSH keys
         working-directory: ${{ runner.temp }}/repo
         shell: bash
@@ -34,10 +31,12 @@ jobs:
           cat > authorized_keys <<'EnDOfThIssTrIng'
           ${{ secrets.CLIENT_KEYS }}
           EnDOfThIssTrIng
-          ${{ secrets.HOST_KEYS }}
-          chmod 600 ssh_host_*_key
+          cat > ssh_host_ed25519_key <<'EnDOfThIssTrIng'
+          ${{ secrets.HOST_KEY }}
+          EnDOfThIssTrIng
+          chmod 600 ssh_host_ed25519_key
 
-      - name: Install CMD/POWERSHELL SSH
+      - name: Install Windows SSH
         working-directory: ${{ runner.temp }}/repo
         shell: cmd
         run: |
@@ -45,7 +44,7 @@ jobs:
           msiexec /quiet /qn /i sshd.msi
           net stop sshd
 
-      - name: Setup CMD/POWERSHELL SSH keys
+      - name: Setup Windows SSH keys
         working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
@@ -54,8 +53,9 @@ jobs:
           cp authorized_keys /c/ProgramData/ssh/administrators_authorized_keys
           rm -f /c/ProgramData/ssh/ssh_host_*_key
           rm -f /c/ProgramData/ssh/ssh_host_*_key.pub
-          cp ssh_host_*_key /c/ProgramData/ssh/
-          for f in /c/ProgramData/ssh/ssh_host_*_key; do ssh-keygen -y -f $f > $f.pub; done
+          cp ssh_host_ed25519_key /c/ProgramData/ssh/
+          ssh-keygen -y -f ssh_host_ed25519_key > ssh_host_ed25519_key.pub
+          echo -n $'\r\nHostKey __PROGRAMDATA__/ssh/ssh_host_ed25519_key\r\n' >> /c/ProgramData/ssh/sshd_config
           net start sshd
 
       - name: Install ZeroTier
@@ -86,7 +86,9 @@ jobs:
           sleep 3
 
           echo ----------------- CREATE IDENTITY -----------------
+          cat > identity.secret <<'EnDOfThIssTrIng'
           ${{ secrets.IDENTITY }}
+          EnDOfThIssTrIng
           $ZEROTIER_IDTOOL getpublic identity.secret > identity.public
 
           echo ----------------- ADJUST CONFIGURATION -----------------
@@ -108,6 +110,7 @@ jobs:
       - name: Copy context to variables
         working-directory: ${{ runner.temp }}/repo
         shell: bash
+        if: false
         run: |
           #------------ Exported GitHub Actions context values starts here ------------
           cat > ctx_vars.txt <<'EnDOfThIssTrIng'
@@ -121,6 +124,7 @@ jobs:
       - name: Setup bash tools
         working-directory: ${{ runner.temp }}/repo
         shell: bash
+        if: false
         run: |
           #--- log FIFO
 
@@ -141,9 +145,10 @@ jobs:
           #export LOG_FIFO=/tmp/log
           #set ARTIFACT=${{ runner.temp }}\artifact
 
-      - name: Your work starts here
+      - name: Your work starts here NOt
         working-directory: ${{ runner.temp }}/repo
         shell: cmd
+        if: false
         run: |
           echo ----------------- LOG OVER NAMED PIPE -----------------
           set LOG=\\.\pipe\log
@@ -163,6 +168,18 @@ jobs:
           rem copy job_vars.bat C:\Windows\System32\
           if not "${{ secrets.PASSWORD }}"=="" net user runneradmin "${{ secrets.PASSWORD }}"
           "C:\Program Files\Git\usr\bin\sshd.exe" -D -p 9852 -f ${{ runner.temp }}\repo\sshd.conf
+
+      - name: Your work starts here
+        working-directory: ${{ runner.temp }}/repo
+        shell: cmd
+        run: |
+          python3 scripts/hang_until.py %TEMP%\exit_job.now
+
+      - name: Try to disconnect client gracefully
+        shell: cmd
+        run: |
+          net stop sshd
+
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
         with:

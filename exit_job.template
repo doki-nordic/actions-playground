@@ -1,3 +1,3 @@
 #!/bin/bash
 
-kill $(ps aux | grep sshd | grep ---USER--- | awk '{print $2}')
+touch /tmp/exit_job.now

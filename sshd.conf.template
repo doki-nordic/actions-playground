@@ -1,5 +1,5 @@
 Banner ---DIR-BASH---/banner.txt
-HostKey ---DIR-BASH---/ssh_host_rsa_key
+HostKey ---DIR-BASH---/ssh_host_ed25519_key
 AuthorizedKeysFile ---DIR-BASH---/authorized_keys
 PidFile ---DIR-BASH---/sshd_pid
 PasswordAuthentication yes
