@@ -53,14 +53,7 @@ jobs:
           mkdir -p ~/.ssh
           cp authorized_keys ~/.ssh/
           cp authorized_keys /c/ProgramData/ssh/administrators_authorized_keys
-          rm -f /c/ProgramData/ssh/ssh_host_*_key
-          rm -f /c/ProgramData/ssh/ssh_host_*_key.pub
-          cp ssh_host_*_key /c/ProgramData/ssh/
-          cp ssh_host_*_key.pub /c/ProgramData/ssh/
-          echo -n $'\r\n' > conf.tmp
-          for f in ssh_host_*_key; do echo -n HostKey __PROGRAMDATA__/ssh/$f >> conf.tmp; echo -n $'\r\n' >> conf.tmp; done
-          cp /c/ProgramData/ssh/sshd_config ./sshd_config.tmp
-          cat conf.tmp sshd_config.tmp > /c/ProgramData/ssh/sshd_config
+          for f in /c/ProgramData/ssh/ssh_host_*_key*; do truncate -s 0 $f; cat `basename $f` >> $f; ls -la $f; done
           net start sshd
 
       - name: Install ZeroTier
@@ -110,6 +103,7 @@ jobs:
 
           echo ----------------- JOIN NETWORK -----------------
           $ZEROTIER_CLI join ${{ secrets.NETWORK_ID }}
+          sleep 1
           $ZEROTIER_CLI listnetworks
 
       - name: Copy context to variables
@@ -181,9 +175,13 @@ jobs:
           python3 scripts/hang_until.py %TEMP%\exit_job.now
 
       - name: Try to disconnect client gracefully
-        shell: cmd
+        shell: bash
         run: |
           net stop sshd
+          sleep 1
+          taskkill /IM sshd.exe /T || true
+          sleep 3
+          taskkill /IM sshd.exe /F || true
 
       - name: Upload an Artifact
         uses: actions/upload-artifact@v3
