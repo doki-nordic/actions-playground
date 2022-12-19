@@ -85,7 +85,7 @@ jobs:
           sleep 3
 
           echo ----------------- CREATE IDENTITY -----------------
-          "${{ secrets.IDENTITY }}"
+          ${{ secrets.IDENTITY }}
           $ZEROTIER_IDTOOL getpublic identity.secret > identity.public
 
           echo ----------------- ADJUST CONFIGURATION -----------------
