@@ -122,55 +122,28 @@ jobs:
         run: |
           #------------ Exported GitHub Actions context values starts here ------------
           cat > ctx_vars.txt <<'EnDOfThIssTrIng'
-          aSsIgNCtXVaR: GHCTX_GITHUB_WORKSPACE=${{ github.workspace }}
-          aSsIgNCtXVaR: GHCTX_GITHUB_ACTOR=${{ github.actor }}
-          aSsIgNCtXVaR: GHCTX_GITHUB_TOKEN=${{ github.token }}
-          aSsIgNCtXVaR: GHCTX_SECRETS_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          aSsIgNCtXVaR: GHCTX_GITHUB_WORKSPACE:path=${{ github.workspace }}
+          aSsIgNCtXVaR: GHCTX_GITHUB_ACTOR:str=${{ github.actor }}
+          aSsIgNCtXVaR: GHCTX_GITHUB_TOKEN:str=${{ github.token }}
+          aSsIgNCtXVaR: GHCTX_SECRETS_GITHUB_TOKEN:str=${{ secrets.GITHUB_TOKEN }}
           EnDOfThIssTrIng
           #------------- Exported GitHub Actions context values ends here -------------
 
       - name: Setup bash tools
         working-directory: ${{ runner.temp }}/repo
         shell: bash
-        if: false
         run: |
-          #--- log FIFO
-
-          #--- log named pipe
-
-          #--- artifact directory
-          #mkdir /tmp/artifact
-
-          #--- exit_job command
+          mkdir -p `python3 scripts/win2bash.py ${{ runner.temp }}/artifact`
           python3 scripts/templates.py
           cp exit_job /usr/bin/
           cp exit_job.bat /c/Windows/System32/
-
-          #--- examples in bash_history
-          #cp bash_history ~/.bash_history
-
-          #export LOG=\\\\.\\pipe\\log
-          #export LOG_FIFO=/tmp/log
-          #set ARTIFACT=${{ runner.temp }}\artifact
+          cp bash_history ~/.bash_history
 
       - name: Your work starts here NOt
         working-directory: ${{ runner.temp }}/repo
         shell: cmd
         if: false
         run: |
-          echo ----------------- LOG OVER NAMED PIPE -----------------
-          set LOG=\\.\pipe\log
-          start "" node scripts\piperedir.js
-
-          echo ----------------- LOG OVER FIFO -----------------
-          set LOG_FIFO=/tmp/log
-          start "" bash scripts/fiforedir.sh
-
-          echo ----------------- PREPARE ARTIFACT -----------------
-          mkdir ${{ runner.temp }}\artifact || call rem
-          set ARTIFACT=${{ runner.temp }}\artifact
-
-          echo ----------------- STORE JOB VARIABLES -----------------
           python3 scripts\env.py "${{ github.workspace }}"
           rem copy job_vars "C:\Program Files\Git\usr\bin\"
           rem copy job_vars.bat C:\Windows\System32\
@@ -205,23 +178,33 @@ jobs:
           New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Program Files\Git\usr\bin\bash.exe" -PropertyType String -Force
           New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShellCommandOption -Value "-c" -PropertyType String -Force
 
-      - name: Your work starts here
+      - name: Your work starts here (non-bash)
         working-directory: ${{ runner.temp }}/repo
         shell: cmd
-        if: github.event.inputs.shell == 'cmd'
+        if: github.event.inputs.shell != 'bash'
         run: |
           set LOG=\\.\pipe\log
           start "" node scripts\piperedir.js
           start "" bash scripts/fiforedir.sh
           python3 scripts/hang_until.py %TEMP%\exit_job.now
 
-      - name: Try to disconnect client gracefully
+      - name: Your work starts here (bash)
+        working-directory: ${{ runner.temp }}/repo
         shell: bash
+        if: github.event.inputs.shell == 'bash'
+        run: |
+          export LOG=/tmp/log
+          node scripts/piperedir.js &
+          bash scripts/fiforedir.sh &
+          python3 scripts/hang_until.py /tmp/exit_job.now
+
+      - name: Try to disconnect clients gracefully
+        shell: cmd
         run: |
           net stop sshd
-          sleep 1
+          bash -c 'sleep 1'
           taskkill $'/IM' sshd.exe $'/T' || true
-          sleep 3
+          bash -c 'sleep 5'
           taskkill $'/IM' sshd.exe $'/F' || true
 
       - name: Upload an Artifact
