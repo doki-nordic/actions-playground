@@ -27,6 +27,35 @@ jobs:
           echo ----------------- ADD FIREWALL EXCEPTION -----------------
           netsh advfirewall firewall add rule name="ALLOW TCP PORT 9852" dir=in action=allow protocol=TCP localport=9852
 
+      - name: Write SSH keys
+        working-directory: ${{ runner.temp }}/repo
+        shell: bash
+        run: |
+          cat > authorized_keys <<'EnDOfThIssTrIng'
+          ${{ secrets.CLIENT_KEYS }}
+          EnDOfThIssTrIng
+          ${{ secrets.HOST_KEYS }}
+          chmod 600 ssh_host_*_key
+
+      - name: Install CMD/POWERSHELL SSH
+        working-directory: ${{ runner.temp }}/repo
+        shell: cmd
+        run: |
+          curl -L -o sshd.msi https://github.com/PowerShell/Win32-OpenSSH/releases/download/v9.1.0.0p1-Beta/OpenSSH-Win64-v9.1.0.0.msi
+          msiexec /quiet /qn /i sshd.msi
+          net stop sshd
+
+      - name: Setup CMD/POWERSHELL SSH keys
+        working-directory: ${{ runner.temp }}/repo
+        shell: bash
+        run: |
+          cp authorized_keys ~/.ssh/
+          cp authorized_keys /c/ProgramData/ssh/administrators_authorized_keys
+          rm -f /c/ProgramData/ssh/ssh_host_*_key
+          rm -f /c/ProgramData/ssh/ssh_host_*_key.pub
+          cp ssh_host_*_key /c/ProgramData/ssh/
+          net start sshd
+
       - name: Install ZeroTier
         working-directory: ${{ runner.temp }}/repo
         shell: cmd
@@ -55,7 +84,7 @@ jobs:
           sleep 3
 
           echo ----------------- CREATE IDENTITY -----------------
-          echo -n "${{ secrets.IDENTITY }}" > identity.secret
+          "${{ secrets.IDENTITY }}"
           $ZEROTIER_IDTOOL getpublic identity.secret > identity.public
 
           echo ----------------- ADJUST CONFIGURATION -----------------
@@ -73,14 +102,6 @@ jobs:
           echo ----------------- JOIN NETWORK -----------------
           $ZEROTIER_CLI join ${{ secrets.NETWORK_ID }}
           $ZEROTIER_CLI listnetworks
-
-      - name: Load SSH Keys
-        working-directory: ${{ runner.temp }}/repo
-        shell: bash
-        run: |
-          echo -n "${{ secrets.HOST_KEY }}" > host_key
-          echo -n "${{ secrets.CLIENT_KEY }}" > authorized_keys
-          chmod 600 host_key
 
       - name: Copy context to variables
         working-directory: ${{ runner.temp }}/repo

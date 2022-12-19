@@ -1,3 +1,7 @@
+# Creates an encrypted ZIP file containing new keys created by the
+# "keys.py" script and multiple "client_key.py".
+# "PASSWORD" environment variable is a ZIP password.
+# First argument contains number of client keys.
 
 import os
 import sys

@@ -1,7 +1,9 @@
+# Creates a new client ssh key pair: "client_key" and "client_key.pub".
+# If files already exists, appends a number to file names.
+# Public key is appended to "secrets.CLIENT_KEYS.txt" file.
 
 import subprocess
 from pathlib import Path
-from utils import bash_escape
 
 parent_dir = Path(__file__).parent.parent
 

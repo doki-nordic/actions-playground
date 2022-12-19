@@ -1,56 +1,54 @@
+# The script create a shell script file that reproduces specific
+# environment variables.
 
 import os
-import sys
 import re
-import utils
-from os.path import dirname
+from pathlib import Path
+from argparse import ArgumentParser
+from utils import bash_escape, cmd_escape
 
-#
-# The script reads environment variables from current environment
-# and ctx_vars.txt file. Next, it outputs shell scripts that reproduce
-# the the environment variables.
-#
+parser = ArgumentParser()
+parser.add_argument('--bat', help='output file as Windows batch file')
+parser.add_argument('--bash', help='output file as Bash script')
+parser.add_argument('--env-out', help='output environment in format the same as "env -0"')
+parser.add_argument('--ctx', help='additional file with context')
+parser.add_argument('--env-filter', help='input environment from current environment with regex as a filter')
+parser.add_argument('--env-file', help='input environment from file, the format is the same as an output of "env -0"')
+parser.add_argument('--skip', nargs='*', default=[], help='skip specific variables names, each argument is a name')
+parser.add_argument('--cd', help='change current directory at the end of the script')
+args = parser.parse_args()
 
-skip_vars = ('_', 'PWD')
-parent_dir = dirname(__file__) + '/..'
-bash_file = f'{parent_dir}/job_vars'
-bat_file = f'{parent_dir}/job_vars.bat'
-ctx_file = f'{parent_dir}/ctx_vars.txt'
+if (args.bat is None) and (args.bash is None):
+    parser.print_help()
+    exit(1)
 
+def get_env():
+    if args.env_filter is None:
+        return []
+    result = []
+    for key, value in os.environ.items():
+        if re.fullmatch(args.env_filter, key):
+            result.append((key, value))
+    return result
 
-def cmd_escape(text):
-    return (text
-        .replace('%', '%%')
-        .replace('^', '^^')
-        .replace('&', '^&')
-        .replace('<', '^<')
-        .replace('>', '^>')
-        .replace('|', '^|')
-        .replace('\'', '^\'')
-        .replace('`', '^`')
-        .replace(',', '^,')
-        .replace(';', '^;')
-        .replace('=', '^=')
-        .replace('(', '^(')
-        .replace(')', '^)')
-        .replace('"', '^"')
-        .replace('\r\n', '\n')
-        .replace('\n', '^\r\n\r\n')
-        )
+def get_env_file():
+    if args.env_file is None:
+        return []
+    text = Path(args.env_file).read_text(errors='replace')
+    result = []
+    for item in text.split('\0'):
+        item = item.split('=', 1)
+        if len(item) < 2:
+            continue
+        key, value = item
+        result.append((key, value))
+    return result
 
-def add_var(key, value):
-    global output_bash, output_cmd
-    if key in skip_vars:
-        return
-    output_cmd += f'set {key}={cmd_escape(value)}\r\n'
-    if re.fullmatch(r'[0-9A-Z_a-z]*', key):
-        if re.fullmatch(r'[\+,\-\.\/0-9:=A-Z_a-z]*', value):
-            output_bash += f'export {key}={value}\n'
-        else:
-            output_bash += f"read -r -d '' {key} <<'EnDOfThIssTrIng'\n{value}\nEnDOfThIssTrIng\n"
-            output_bash += f"export {key}\n"
-
-def process_ctx_file(text: str):
+def get_ctx():
+    if args.ctx is None:
+        return []
+    text = Path(args.ctx).read_text(errors='replace')
+    result = []
     for part in text.split('aSsIgNCtXVaR:'):
         part = part.lstrip()
         while (len(part) > 0) and (ord(part[-1:]) <= 32) and (part[-1:] != '\n'):
@@ -64,25 +62,37 @@ def process_ctx_file(text: str):
             continue
         key = part[0:pos]
         value = part[pos+1:]
-        add_var(key, value)
+        result.append((key, value))
+    return result
+
+def add_var(key, value):
+    global output_bash, output_cmd
+    if key in args.skip:
+        return
+    output_cmd += f'set {key}={cmd_escape(value)}\r\n'
+    if re.fullmatch(r'[A-Z_a-z][0-9A-Z_a-z]*', key):
+        output_bash += f'export {key}=$\'{bash_escape(value)}\'\n'
 
 output_bash = '#!/bin/bash\n'
 output_cmd = '@echo off\r\n'
 
-for key, value in os.environ.items():
+for key, value in get_env_file():
     add_var(key, value)
 
-with open(ctx_file, 'r') as fd:
-    process_ctx_file(fd.read())
+for key, value in get_env():
+    add_var(key, value)
 
-dest = sys.argv[1]
+for key, value in get_ctx():
+    add_var(key, value)
 
-output_bash += f'cd "{utils.cmd2bash(dest)}"\n'
-output_cmd += f'cd /d "{dest}"\r\n'
+if args.cd is not None:
+    output_bash += f'cd $\'{bash_escape(args.cd)}\'\n'
+    output_cmd += f'cd /d {cmd_escape(args.cd)}\r\n'
 
-with open(bash_file, 'w') as fd:
-    fd.write(output_bash)
-os.chmod(bash_file, 0o755)
+if args.bat is not None:
+    Path(args.bat).write_text(output_cmd)
 
-with open(bat_file, 'w') as fd:
-    fd.write(output_cmd)
+if args.bash is not None:
+    p = Path(args.bash)
+    p.write_text(output_bash)
+    p.chmod(0o755)

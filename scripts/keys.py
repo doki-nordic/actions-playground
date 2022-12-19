@@ -1,3 +1,7 @@
+# Creates a set of keys needed for a new fork.
+#  - SSH host key pairs: "ssh_host_*_key" and "ssh_host_*_key.pub".
+#  - ZeroTier identity file: "identity.secret".
+#  - Text files containing Action Secrets with newly created keys.
 
 import subprocess
 from pathlib import Path

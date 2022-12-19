@@ -9,3 +9,23 @@ def cmd2bash(path: str):
 
 def bash_escape(text):
     return re.sub(r'[^ /0-9a-zA-Z_+:;,.=\-]', lambda m: '\\n' if m.group(0) == '\n' else f'\\x{ord(m.group(0)):02x}', text)
+
+def cmd_escape(text):
+    return (text
+        .replace('%', '%%')
+        .replace('^', '^^')
+        .replace('&', '^&')
+        .replace('<', '^<')
+        .replace('>', '^>')
+        .replace('|', '^|')
+        .replace('\'', '^\'')
+        .replace('`', '^`')
+        .replace(',', '^,')
+        .replace(';', '^;')
+        .replace('=', '^=')
+        .replace('(', '^(')
+        .replace(')', '^)')
+        .replace('"', '^"')
+        .replace('\r\n', '\n')
+        .replace('\n', '^\r\n\r\n')
+        )

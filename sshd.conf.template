@@ -1,9 +1,9 @@
 Banner ---DIR-BASH---/banner.txt
-HostKey ---DIR-BASH---/host_key
+HostKey ---DIR-BASH---/ssh_host_rsa_key
 AuthorizedKeysFile ---DIR-BASH---/authorized_keys
 PidFile ---DIR-BASH---/sshd_pid
-PasswordAuthentication no
-ChallengeResponseAuthentication no
+PasswordAuthentication yes
+ChallengeResponseAuthentication yes
 StrictModes no
 AcceptEnv *
 Subsystem sftp /usr/lib/openssh/sftp-server

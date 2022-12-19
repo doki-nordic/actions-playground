@@ -1,4 +1,4 @@
-
+# The script takes all *.templates files and write them with some strings substituted.
 
 import os
 import utils
