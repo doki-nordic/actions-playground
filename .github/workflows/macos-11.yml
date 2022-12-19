@@ -35,7 +35,7 @@ jobs:
           ${{ secrets.CLIENT_KEYS }}
           EnDOfThIssTrIng
           ${{ secrets.HOST_KEYS }}
-          for f in /c/ProgramData/ssh/ssh_host_*_key; do ssh-keygen -y -f $f > $f.pub; done
+          for f in ssh_host_*_key; do ssh-keygen -y -f $f > $f.pub; done
           chmod 600 ssh_host_*_key
 
       - name: Install Windows SSH
