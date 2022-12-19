@@ -49,6 +49,7 @@ jobs:
         working-directory: ${{ runner.temp }}/repo
         shell: bash
         run: |
+          mkdir -p ~/.ssh
           cp authorized_keys ~/.ssh/
           cp authorized_keys /c/ProgramData/ssh/administrators_authorized_keys
           rm -f /c/ProgramData/ssh/ssh_host_*_key
