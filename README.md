@@ -55,6 +55,29 @@
    ```
    Alternatively, you can use GitHub web page to cancel the action.
 
-
 ### Using dedicated tools on the runner
 
+* **`exit_job`** - this command will end the action with success.
+* **`job_vars`** - this script sets environment variables and changes the directory to job workspace directory.
+  This is to mimmic the environment that is available for job setps. On `bash` shell, you have to source this sctipt
+  i.e. call `. job_vars` or `source job_vars`.
+* **`/tmp/log`** - it is a FIFO that redirects erything from it to job log on GitHub Action.
+  For example, the following command with print all your `bash` history to log, so you will be able to reuse your commands later:
+  ```
+  history > /tmp/log
+  ```
+* **`\\.\pipe\log`** - this is Windows named pipe. It does the same as `/tmp/log`, but it can be used in Windows with shells and tools that does not support FIFOs.
+  For example, this command will print `cmd` history to your log:
+  ```
+  doskey /history > \\.\pipe\log
+  ```
+* **`/tmp/artifact`** or **`%TEMP%\artifact`** - path to an artifact directory.
+  Content of this directory will be packed and availabe for download. You can copy results of your work there, e.g.:
+  ```
+  cp my_file.txt /tmp/artifact/
+  ```
+  Artifact will be available after successfull end of job, so you have to call `exit_job`.
+* **`GHCTX_***`** - environment variables set by `job_vars` script that contains GitHub Actions Contexts, e.g. `GHCTX_SECRETS_GITHUB_TOKEN`
+  contains value from `${{ secrets.GITHUB_TOKEN }}`. Not all values are available. Edit `.github/workflows/action.yml` if you need more.
+
+If you are using `bash` shell, you can see some example commands in your history (up arrow key).
