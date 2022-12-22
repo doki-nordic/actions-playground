@@ -1,3 +1,13 @@
+# actions-playground
+
+Creating a GitHub Actions workflow with non-trivial commands may be annoying.
+Especially, when you have to do some experiments first, e.g. what command will work or which dependencies you need.
+It can be even harder when you are working on an operating system different from the target OS.
+Pushing and re-running the workflow each time is a nightmare.
+
+This repository tries to simplify this kind of work.
+With it, you can start a single job that waits for your commands.
+This way, you can prepare your commands for a workflow interactively without committing, pushing, and long waiting.
 
 ## How to use it
 
