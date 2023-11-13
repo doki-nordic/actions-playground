@@ -6,7 +6,12 @@ HostKey {{keys_dir}}/ssh_host_rsa_key
 AuthorizedKeysFile {{keys_dir}}/authorized_keys
 PidFile {{keys_dir}}/sshd_pid
 PasswordAuthentication yes
+UsePAM yes
 ChallengeResponseAuthentication yes
 StrictModes no
 AcceptEnv *
+{% if macos %}
+Subsystem sftp /usr/libexec/sftp-server
+{% else %}
 Subsystem sftp /usr/lib/openssh/sftp-server
+{% endif %}

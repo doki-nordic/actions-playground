@@ -1,0 +1,11 @@
+#!/bin/bash
+
+anotherParent=$$
+names=`ps -p $anotherParent -o comm= | xargs`
+anotherParent=`ps -p $anotherParent -o ppid= | xargs`
+while [ ! -z "$anotherParent" ] && [ "$anotherParent" != "0" ]; do
+    names="$names --- `ps -p $anotherParent -o comm= | xargs`"
+    anotherParent=`ps -p $anotherParent -o ppid= | xargs`
+done
+
+echo $names

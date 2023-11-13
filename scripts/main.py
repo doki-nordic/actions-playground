@@ -22,13 +22,18 @@ def render_template(input: Path, output: Path):
     env = jinja2.Environment()
     env.filters['posix'] = inputs.posix_path
     tmpl = env.from_string(input.read_text())
-    text = tmpl.render(**inputs.__dict__)
+    data = dict(inputs.__dict__)
+    if output.exists():
+        data['old'] = output.read_text()
+    text = tmpl.render(**data)
     output.write_text(text)
     return output
 
 def render_templates():
-    render_template(inputs.data_dir / 'sshd.conf.jinja', inputs.keys_dir / 'sshd.conf')
     shutil.copy(inputs.data_dir / 'bash_history', Path.home() / '.bash_history')
+    render_template(inputs.data_dir / 'bashrc.jinja', Path.home() / '.bashrc')
+    render_template(inputs.data_dir / 'bash_profile.jinja', Path.home() / '.bash_profile')
+    render_template(inputs.data_dir / 'sshd.conf.jinja', inputs.keys_dir / 'sshd.conf')
 
 def render_root_templates():
     render_template(inputs.data_dir / 'exit_job.jinja', inputs.bin_dir / 'exit_job').chmod(0o755)
@@ -37,11 +42,12 @@ def render_root_templates():
     render_template(inputs.data_dir / 'ghctx.jinja', inputs.bin_dir / 'ghctx').chmod(0o755)
     if inputs.windows:
         render_template(inputs.data_dir / 'ghctx.bat.jinja', inputs.bin_dir / 'ghctx.bat')
+    render_template(inputs.data_dir / 'ghactionplaygr_tool.jinja', inputs.bin_dir / 'ghactionplaygr_tool').chmod(0o755)
 
 def write_client_keys():
     keys = inputs.contexts['secrets']['CLIENT_KEY']
     keys += '\n' + (inputs.keys_dir / 'client_key.pub').read_text()
-    keys = re.sub(f'(?:\s*[\r\n])+\s*', '\n', keys.strip()) + '\n'
+    keys = re.sub(f'(?:\\s*[\\r\\n])+\\s*', '\n', keys.strip()) + '\n'
     (inputs.keys_dir / 'authorized_keys').write_text(keys)
 
 def get_sshd_path():
@@ -190,19 +196,20 @@ def write_bat_env():
     dst = inputs.bin_dir / 'load_job.bat'
     dst.write_text('\r\n'.join(output) + '\r\n')
 
-if sys.argv.count('--as-root'):
-    if not inputs.windows:
-        stop_ssh_service()
-    allow_low_ports()
-    render_root_templates()
-    write_bash_env()
-    write_bat_env()
-else:
-    unpack_zip()
-    render_templates()
-    write_client_keys()
-    set_permissions()
-    if inputs.windows:
-        start_sshd_service()
+if __name__ == '__main__':
+    if sys.argv.count('--as-root'):
+        if not inputs.windows:
+            stop_ssh_service()
+        allow_low_ports()
+        render_root_templates()
+        write_bash_env()
+        write_bat_env()
     else:
-        run_sshd_server()
+        unpack_zip()
+        render_templates()
+        write_client_keys()
+        set_permissions()
+        if inputs.windows:
+            start_sshd_service()
+        else:
+            run_sshd_server()

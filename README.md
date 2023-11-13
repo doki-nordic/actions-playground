@@ -21,14 +21,11 @@ Possible connection types depends on the runner OS:
 | runner OS   | HTTP| SSH     | RDP | VNC |
 |-------------|-----|---------|-----|-----|
 | **Ubuntu**  | yes | yes     | no  | no  |
-| **macOS**   | yes | yes[^1] | no  | yes[^2] |
+| **macOS**   | yes | yes     | no  | yes[^1] |
 | **Windows** | yes | yes     | yes | no  |
 
-[^1] - Only [certificate authentication](#setup-ssh-authentication) is possible, password authentication does not work.
-[^1]: Only [certificate authentication](#setup-ssh-authentication) is possible, password authentication does not work.
-
-[^2] - VNC server on `macos-11` is broken.
-[^2]: VNC server on `macos-11` is broken.
+[^1] - VNC server on `macos-11` is broken.
+[^1]: VNC server on `macos-11` is broken.
 
 ## One-time preparations
 

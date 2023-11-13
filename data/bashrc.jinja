@@ -1,0 +1,16 @@
+
+if [ "$ACT_PLGR_BASHRC_LOADED" = "1" ]; then
+    return
+fi
+
+{{old}}
+
+if ghactionplaygr_tool pstree | grep -q 'sshd'; then
+  . load_job
+else
+  if ghactionplaygr_tool pstree | grep -q 'ttyd'; then
+    . load_job
+  fi
+fi
+export ACT_PLGR_BASHRC_LOADED=1
+

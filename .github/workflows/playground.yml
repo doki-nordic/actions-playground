@@ -186,21 +186,6 @@ jobs:
         run: |
           pip install -r scripts/requirements.txt
 
-      # Collect env
-
-      - name: Collect env (cmd)
-        shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}
-        run: |
-          python -c "import json; import os; print(json.dumps(dict(os.environ)))" > cmd_env.json
-
-      - name: Collect env
-        shell: bash
-        working-directory: ${{ runner.temp }}
-        run: |
-          env > bash_env.txt
-
       # Download ttyd
 
       - name: Download ttyd (windows)
@@ -227,6 +212,21 @@ jobs:
           brew install ttyd
           echo TTYD_CMD=ttyd >> $GITHUB_ENV
 
+      # Collect env
+
+      - name: Collect env (cmd)
+        shell: cmd
+        if: startsWith(github.event.inputs.os, 'windows')
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -c "import json; import os; print(json.dumps(dict(os.environ)))" > cmd_env.json
+
+      - name: Collect env
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          env > bash_env.txt
+
       # Do rest of the work in Python, it's easier there
 
       - name: Your work starts here (non-windows)
@@ -235,9 +235,10 @@ jobs:
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
+          env > bash_env.txt
           bash scripts/redir_fifo.sh &
           sudo --preserve-env=RUNNER_TEMP python3 scripts/main.py --as-root
-          ${{ env.TTYD_CMD }} -d 0 -p 80 -w '${{ github.workspace }}' -c 'runner:${{ secrets.PASSWORD }}' bash &
+          sudo -u "`whoami`" ${{ env.TTYD_CMD }} -W -d 0 -p 80 -w '${{ github.workspace }}' -c 'runner:${{ secrets.PASSWORD }}' bash &
           python3 scripts/main.py
 
       - name: Your work starts here (windows non-bash)
@@ -247,10 +248,11 @@ jobs:
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
+          python -c "import json; import os; print(json.dumps(dict(os.environ)))" > cmd_env.json
           start /b "" node scripts\redir_pipe.js
           start /b "" bash scripts/redir_fifo.sh
           python scripts/main.py --as-root
-          start /b "" %RUNNER_TEMP%\ttyd.exe -d 0 -p 80 -w "${{ github.workspace }}" -c "runneradmin:${{ secrets.PASSWORD }}" "${{ env.TTYD_SHELL }}"
+          start /i /b "" %RUNNER_TEMP%\ttyd.exe -W -d 0 -p 80 -w "${{ github.workspace }}" -c "runneradmin:${{ secrets.PASSWORD }}" "${{ env.TTYD_SHELL }}"
           python scripts/main.py
 
       - name: Your work starts here (windows bash)
@@ -261,10 +263,11 @@ jobs:
           RUNNER_TEMP: ${{ runner.temp }}
           TTYD_SHELL: ${{ env.TTYD_SHELL }}
         run: |
+          env > bash_env.txt
           node scripts/redir_pipe.js &
           bash scripts/redir_fifo.sh &
           python scripts/main.py --as-root
-          $RUNNER_TEMP/ttyd.exe -d 0 -p 80 -w `ghctx -p github.workspace` -c 'runneradmin:${{ secrets.PASSWORD }}' "$TTYD_SHELL" &
+          $RUNNER_TEMP/ttyd.exe -W -d 0 -p 80 -w `ghctx -p github.workspace` -c 'runneradmin:${{ secrets.PASSWORD }}' "$TTYD_SHELL" &
           python scripts/main.py
 
       # Upload an Artifact
