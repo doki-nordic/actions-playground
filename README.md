@@ -18,11 +18,11 @@ your work on the runner.
 
 Possible connection types depends on the runner OS:
 
-| runner OS   | HTTP| SSH     | RDP | VNC |
-|-------------|-----|---------|-----|-----|
-| **Ubuntu**  | yes | yes     | no  | no  |
-| **macOS**   | yes | yes     | no  | yes[^1] |
-| **Windows** | yes | yes     | yes | no  |
+| runner OS   | HTTP| SSH | SFTP | RDP | VNC |
+|-------------|-----|-----|------|-----|-----|
+| **Ubuntu**  | yes | yes | yes  | no  | no  |
+| **macOS**   | yes | yes | yes  | no  | yes[^1] |
+| **Windows** | yes | yes | yes  | yes | no  |
 
 [^1] - VNC server on `macos-11` is broken.
 [^1]: VNC server on `macos-11` is broken.
