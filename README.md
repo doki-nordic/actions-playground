@@ -210,8 +210,8 @@ You have a few options here, depending on your authentication preferences:
    e.g. from your `~/.ssh/` directory, copy its content to the `CLIENT_KEY` secret.
 
 1. If you want to use a new SSH key that was automatically generated,
-   you can go back to `Generate New Keys` workflow (don't run it again),
-   go to last run summary and download the artifact. Open it using a password from
+   you can go [`keys` branch](../../tree/keys) that was created by the
+   `Generate New Keys` workflow. Open ZIP file using a password from
    the `PASSWORD` secret. You will have there a new private key that you can later use
    to connect over the SSH.
 
