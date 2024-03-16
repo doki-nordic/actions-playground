@@ -16,6 +16,15 @@ on:
           - macos-13
           - macos-12
           - macos-11
+      service:
+        type: choice
+        description: Tunneling service
+        options:
+          - pinggy.io and localhost.run
+          - pinggy.io
+          - zrok.io
+          - ZeroTier
+          - localhost.run
       shell:
         type: choice
         description: Shell
@@ -41,11 +50,13 @@ jobs:
       # Connect with ZeroTier
 
       - uses: zerotier/github-action@v1.0.1
+        if: github.event.inputs.service == 'ZeroTier'
         with:
           network_id: ${{ secrets.NETWORK_ID }}
           auth_token: ${{ secrets.ACCESS_TOKEN  }}
 
       - uses: kildom/zerotier-management-action@v1.0.0
+        if: github.event.inputs.service == 'ZeroTier'
         id: zerotier
         with:
           auth_token: ${{ secrets.ACCESS_TOKEN  }}

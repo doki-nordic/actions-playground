@@ -7,9 +7,11 @@ import jinja2
 import re
 import inputs
 import subprocess
+import getpass
 import pyzipper
 from os import SEEK_END
 from pathlib import Path
+from ssh_tunnel import LocalhostRun, Pinggy
 
 SKIP_ENV_VARS = r'_|!.:|PWD'
 
@@ -74,7 +76,9 @@ def run_sshd_server():
             exit(sshd_process.returncode)
         if exit_file.exists():
             break
-        time.sleep(3)
+        poll_tunnels()
+        time.sleep(0.5)
+    exit_tunnels()
     sshd_process.terminate()
     try:
         sshd_process.wait(15)
@@ -133,7 +137,9 @@ def start_sshd_service():
     while True:
         if exit_file.exists():
             break
-        time.sleep(3)
+        poll_tunnels()
+        time.sleep(0.5)
+    exit_tunnels()
 
 def allow_low_ports():
     if inputs.ubuntu:
@@ -196,6 +202,93 @@ def write_bat_env():
     dst = inputs.bin_dir / 'load_job.bat'
     dst.write_text('\r\n'.join(output) + '\r\n')
 
+ttyd_tunnel = None
+ssh_tunnel = None
+desktop_tunnel = None
+
+info_ttyd_url = None
+info_ssh_address = None
+info_ssh_port = None
+info_desktop_address = None
+info_desktop_port = None
+
+def start_tunnels():
+    global ttyd_tunnel, ssh_tunnel, desktop_tunnel
+    print('Starting tunnels')
+    ttyd_tunnel = LocalhostRun(port=80, identity_file=inputs.keys_dir / 'ssh_host_ed25519_key')
+    pinggy_token = None
+    if 'PINGGY_TOKEN' in inputs.contexts['secrets']:
+        pinggy_token = inputs.contexts['secrets']['PINGGY_TOKEN'].strip()
+    ssh_tunnel = Pinggy(port=22, http=False, token=pinggy_token)
+    if inputs.windows:
+        desktop_tunnel = Pinggy(port=3389, http=False, token=pinggy_token)
+    elif inputs.macos:
+        desktop_tunnel = Pinggy(port=5900, http=False, token=pinggy_token)
+    else:
+        desktop_tunnel = None
+    print('Done starting tunnels')
+    sys.stdout.flush()
+
+def poll_tunnels():
+    global ttyd_tunnel, ssh_tunnel, desktop_tunnel
+    global info_ttyd_url, info_ssh_address, info_ssh_port, info_desktop_address, info_desktop_port
+    update_info = False
+    res = ttyd_tunnel.poll()
+    if res and res.https_url:
+        info_ttyd_url = res.https_url
+        update_info = True
+    res = ssh_tunnel.poll()
+    if res and res.tcp_address:
+        info_ssh_address = res.tcp_address
+        info_ssh_port = res.tcp_port
+        update_info = True
+    if desktop_tunnel:
+        res = desktop_tunnel.poll()
+        if res and res.tcp_address:
+            info_desktop_address = res.tcp_address
+            info_desktop_port = res.tcp_port
+            update_info = True
+    if update_info:
+        update_connection_info()
+
+def exit_tunnels():
+    global ttyd_tunnel, ssh_tunnel, desktop_tunnel
+    if ttyd_tunnel:
+        ttyd_tunnel.exit()
+    if ssh_tunnel:
+        ssh_tunnel.exit()
+    if desktop_tunnel:
+        desktop_tunnel.exit()
+
+def update_connection_info():
+    global info_ttyd_url, info_ssh_address, info_ssh_port, info_desktop_address, info_desktop_port
+    user = getpass.getuser()
+    print('New connection information')
+    if info_ttyd_url:
+        print(f'HTTPS: {info_ttyd_url}')
+        print(f'HTTPS: user:    {user}')
+    if info_ssh_address:
+        print(f'SSH:   address: {info_ssh_address}')
+        print(f'SSH:   port:    {info_ssh_port}')
+        print(f'SSH:   user:    {user}')
+        print(f'SSH:   ssh -p {info_ssh_port} {user}@{info_ssh_address}')
+        print(f'SSH:   ssh://{user}@{info_ssh_address}:{info_ssh_port}')
+        print(f'SFTP:  sftp://{user}@{info_ssh_address}:{info_ssh_port}')
+    if info_desktop_address:
+        if inputs.windows:
+            print(f'RDP:   address: {info_desktop_address}')
+            print(f'RDP:   port:    {info_desktop_port}')
+            print(f'RDP:   user:    {user}')
+            print(f'RDP:   rdp://full%20address=s:{info_desktop_address}:{info_desktop_port}&username=s:{user}')
+            print(f'RDP:   ms-rd://full%20address=s:{info_desktop_address}:{info_desktop_port}&username=s:{user}')
+        elif inputs.macos:
+            print(f'VNC:   address: {info_desktop_address}')
+            print(f'VNC:   port:    {info_desktop_port}')
+            print(f'VNC:   user:    {user}')
+            print(f'VNC:   vnc://{info_desktop_address}:{info_desktop_port}')
+    sys.stdout.flush()
+
+
 if __name__ == '__main__':
     if sys.argv.count('--as-root'):
         if not inputs.windows:
@@ -209,6 +302,7 @@ if __name__ == '__main__':
         render_templates()
         write_client_keys()
         set_permissions()
+        start_tunnels()
         if inputs.windows:
             start_sshd_service()
         else:

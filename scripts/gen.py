@@ -52,6 +52,7 @@ with pyzipper.AESZipFile(keys_dir / 'keys.zip', 'w', compression=pyzipper.ZIP_DE
 with pyzipper.AESZipFile(keys_dir / 'client_key.zip', 'w', compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
     zf.setpassword(bytes(password, 'utf-8'))
     zf.writestr(client_key.name, client_key.read_bytes())
+    zf.writestr('localhost.run.txt', (keys_dir / f'ssh_host_ed25519_key.pub').read_bytes())
 
 
 for file in all_files:
