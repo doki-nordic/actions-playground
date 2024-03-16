@@ -223,6 +223,35 @@ jobs:
           brew install ttyd
           echo TTYD_CMD=ttyd >> $GITHUB_ENV
 
+      # Download File Browser
+
+      - name: Download File Browser (windows)
+        shell: cmd
+        if: startsWith(github.event.inputs.os, 'windows')
+        working-directory: ${{ runner.temp }}
+        run: |
+          iwr -useb https://raw.githubusercontent.com/filebrowser/get/master/get.ps1 | iex
+
+      - name: Download File Browser (ubuntu)
+        if: startsWith(github.event.inputs.os, 'ubuntu')
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
+
+      - name: Download File Browser (macos)
+        if: startsWith(github.event.inputs.os, 'macos')
+        working-directory: ${{ runner.temp }}
+        run: |
+          brew tap filebrowser/tap
+          brew install filebrowser
+
+      - name: Setup File Browser
+        working-directory: ${{ runner.temp }}
+        run: |
+          filebrowser config init -c ./filebrowser.json -d ./filebrowser.db
+          filebrowser users add runner ${{ secrets.PASSWORD }} -c ./filebrowser.json -d ./filebrowser.db --perm.admin
+          filebrowser users add runneradmin ${{ secrets.PASSWORD }} -c ./filebrowser.json -d ./filebrowser.db --perm.admin
+
       # Collect env
 
       - name: Collect env (cmd)
@@ -246,6 +275,7 @@ jobs:
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
+          filebrowser -a 0.0.0.0 -r / -p 8080 -c ../filebrowser.json -d ../filebrowser.db &
           env > bash_env.txt
           bash scripts/redir_fifo.sh &
           sudo --preserve-env=RUNNER_TEMP python3 scripts/main.py --as-root
@@ -259,6 +289,7 @@ jobs:
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
+          filebrowser -a 0.0.0.0 -r / -p 8080 -c ../filebrowser.json -d ../filebrowser.db &
           python -c "import json; import os; print(json.dumps(dict(os.environ)))" > cmd_env.json
           start /b "" node scripts\redir_pipe.js
           start /b "" bash scripts/redir_fifo.sh
@@ -274,6 +305,7 @@ jobs:
           RUNNER_TEMP: ${{ runner.temp }}
           TTYD_SHELL: ${{ env.TTYD_SHELL }}
         run: |
+          filebrowser -a 0.0.0.0 -r / -p 8080 -c ../filebrowser.json -d ../filebrowser.db &
           env > bash_env.txt
           node scripts/redir_pipe.js &
           bash scripts/redir_fifo.sh &

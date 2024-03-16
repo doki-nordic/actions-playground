@@ -46,13 +46,16 @@ with pyzipper.AESZipFile(keys_dir / 'keys.zip', 'w', compression=pyzipper.ZIP_DE
     zf.setpassword(bytes(password, 'utf-8'))
     for file in all_files:
         zf.writestr(file.name, file.read_bytes())
+    zf.writestr('localhost.run.1.txt', (keys_dir / f'ssh_host_ed25519_key.pub').read_bytes())
+    zf.writestr('localhost.run.2.txt', (keys_dir / f'ssh_host_rsa_key.pub').read_bytes())
 
 # Put client key encrypted ZIP file
 
 with pyzipper.AESZipFile(keys_dir / 'client_key.zip', 'w', compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zf:
     zf.setpassword(bytes(password, 'utf-8'))
     zf.writestr(client_key.name, client_key.read_bytes())
-    zf.writestr('localhost.run.txt', (keys_dir / f'ssh_host_ed25519_key.pub').read_bytes())
+    zf.writestr('localhost.run.1.txt', (keys_dir / f'ssh_host_ed25519_key.pub').read_bytes())
+    zf.writestr('localhost.run.2.txt', (keys_dir / f'ssh_host_rsa_key.pub').read_bytes())
 
 
 for file in all_files:

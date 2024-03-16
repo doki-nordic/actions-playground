@@ -205,15 +205,18 @@ def write_bat_env():
 ttyd_tunnel = None
 ssh_tunnel = None
 desktop_tunnel = None
+files_tunnel = None
+files_tunnel2 = None
 
 info_ttyd_url = None
 info_ssh_address = None
 info_ssh_port = None
 info_desktop_address = None
 info_desktop_port = None
+info_files_url = None
 
 def start_tunnels():
-    global ttyd_tunnel, ssh_tunnel, desktop_tunnel
+    global ttyd_tunnel, ssh_tunnel, desktop_tunnel, files_tunnel, files_tunnel2
     print('Starting tunnels')
     ttyd_tunnel = LocalhostRun(port=80, identity_file=inputs.keys_dir / 'ssh_host_ed25519_key')
     pinggy_token = None
@@ -226,12 +229,14 @@ def start_tunnels():
         desktop_tunnel = Pinggy(port=5900, http=False, token=pinggy_token)
     else:
         desktop_tunnel = None
+    files_tunnel = LocalhostRun(port=8080, identity_file=inputs.keys_dir / 'ssh_host_rsa_key')
+    files_tunnel2 = Pinggy(port=8080, http=True, token=pinggy_token)
     print('Done starting tunnels')
     sys.stdout.flush()
 
 def poll_tunnels():
-    global ttyd_tunnel, ssh_tunnel, desktop_tunnel
-    global info_ttyd_url, info_ssh_address, info_ssh_port, info_desktop_address, info_desktop_port
+    global ttyd_tunnel, ssh_tunnel, desktop_tunnel, files_tunnel, files_tunnel2
+    global info_ttyd_url, info_ssh_address, info_ssh_port, info_desktop_address, info_desktop_port, info_files_url
     update_info = False
     res = ttyd_tunnel.poll()
     if res and res.https_url:
@@ -248,25 +253,40 @@ def poll_tunnels():
             info_desktop_address = res.tcp_address
             info_desktop_port = res.tcp_port
             update_info = True
+    res = files_tunnel.poll()
+    if res and res.https_url:
+        info_files_url = res.https_url
+        update_info = True
+    res = files_tunnel2.poll()
+    if res and res.https_url:
+        info_files_url = res.https_url
+        update_info = True
     if update_info:
         update_connection_info()
 
 def exit_tunnels():
-    global ttyd_tunnel, ssh_tunnel, desktop_tunnel
+    global ttyd_tunnel, ssh_tunnel, desktop_tunnel, files_tunnel, files_tunnel2
     if ttyd_tunnel:
         ttyd_tunnel.exit()
     if ssh_tunnel:
         ssh_tunnel.exit()
     if desktop_tunnel:
         desktop_tunnel.exit()
+    if files_tunnel:
+        files_tunnel.exit()
+    if files_tunnel2:
+        files_tunnel.exit()
 
 def update_connection_info():
-    global info_ttyd_url, info_ssh_address, info_ssh_port, info_desktop_address, info_desktop_port
+    global info_ttyd_url, info_ssh_address, info_ssh_port, info_desktop_address, info_desktop_port, info_files_url
     user = getpass.getuser()
     print('New connection information')
     if info_ttyd_url:
         print(f'HTTPS: {info_ttyd_url}')
         print(f'HTTPS: user:    {user}')
+    if info_files_url:
+        print(f'FILES: {info_files_url}')
+        print(f'FILES: user:    {user}')
     if info_ssh_address:
         print(f'SSH:   address: {info_ssh_address}')
         print(f'SSH:   port:    {info_ssh_port}')
