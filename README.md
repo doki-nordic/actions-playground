@@ -40,6 +40,7 @@ Access without account | :+1: | :x: | :x: | :+1:
 Permanent address | :x: <sup>1</sup> | ?? | :+1: | :+1:/:x: <sup>2</sup>
 Unlimited connection time | :x: 60 min | :+1: | :+1: | :+1:
 Access without dedicated software<br/>on the client side | :+1: | :+1:/:x: <sup>3</sup> | :x: | :+1:
+VPN | :x: | :x: | :+1: | :x:
 
 <sup>1</sup> - With pinggy.io free plan, connection will be interrupted and address will change **every 60 min**.<br/>
 <sup>2</sup> - If you create an accont on localhost.run and you will put an SSH keys there, you will get random permanent addresses.<br/>
