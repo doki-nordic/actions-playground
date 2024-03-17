@@ -12,6 +12,7 @@ import pyzipper
 from os import SEEK_END
 from pathlib import Path
 from ssh_tunnel import LocalhostRun, Pinggy
+from textwrap import dedent
 
 SKIP_ENV_VARS = r'_|!.:|PWD'
 
@@ -280,34 +281,56 @@ def exit_tunnels():
 def update_connection_info():
     global info_ttyd_url, info_ssh_address, info_ssh_port, info_desktop_address, info_desktop_port, info_files_url
     user = getpass.getuser()
-    print('New connection information')
+    info = ''
     if info_ttyd_url:
-        print(f'HTTPS: {info_ttyd_url}')
-        print(f'HTTPS: user:    {user}')
+        info += dedent(f'''
+            ### HTTP Shell\n
+            &nbsp; | [{info_ttyd_url}]({info_ttyd_url})
+            --|--
+            User name | `{user}`
+            ''')
     if info_files_url:
-        print(f'FILES: {info_files_url}')
-        print(f'FILES: user:    {user}')
+        info += dedent(f'''
+            ### HTTP File Browser\n
+            &nbsp;    | [{info_files_url}]({info_files_url})
+            ----------|--
+            User name | `{user}`
+            ''')
     if info_ssh_address:
-        print(f'SSH:   address: {info_ssh_address}')
-        print(f'SSH:   port:    {info_ssh_port}')
-        print(f'SSH:   user:    {user}')
-        print(f'SSH:   ssh -p {info_ssh_port} {user}@{info_ssh_address}')
-        print(f'SSH:   ssh://{user}@{info_ssh_address}:{info_ssh_port}')
-        print(f'SFTP:  sftp://{user}@{info_ssh_address}:{info_ssh_port}')
+        url_port = '' if info_ssh_port == 22 else f':{info_ssh_port}'
+        cmd_port = '' if info_ssh_port == 22 else f'-p {info_ssh_port} '
+        info += dedent(f'''
+            ### SSH/SFTP\n
+            &nbsp;  | [ssh://{user}@{info_ssh_address}{url_port}](https://doki-nordic.github.io/actions-playground/redir.html#ssh://{user}@{info_ssh_address}{url_port})
+            --------|--
+            &nbsp;  | [sftp://{user}@{info_ssh_address}{url_port}](https://doki-nordic.github.io/actions-playground/redir.html#sftp://{user}@{info_ssh_address}{url_port})
+            Address | `{info_ssh_address}`
+            Port    | `{info_ssh_port}{'' if url_port else ' (default)'}`
+            User    | `{user}`
+            Command | `ssh {cmd_port}{user}@{info_ssh_address}`
+            ''')
     if info_desktop_address:
+        info += '\n```\n'
         if inputs.windows:
-            print(f'RDP:   address: {info_desktop_address}')
-            print(f'RDP:   port:    {info_desktop_port}')
-            print(f'RDP:   user:    {user}')
-            print(f'RDP:   rdp://full%20address=s:{info_desktop_address}:{info_desktop_port}&username=s:{user}')
-            print(f'RDP:   ms-rd://full%20address=s:{info_desktop_address}:{info_desktop_port}&username=s:{user}')
+            info += f'RDP:   address: {info_desktop_address}\n'
+            info += f'RDP:   port:    {info_desktop_port}\n'
+            info += f'RDP:   user:    {user}\n'
+            info += f'RDP:   rdp://full%20address=s:{info_desktop_address}:{info_desktop_port}&username=s:{user}\n'
+            info += f'RDP:   ms-rd://full%20address=s:{info_desktop_address}:{info_desktop_port}&username=s:{user}\n'
         elif inputs.macos:
-            print(f'VNC:   address: {info_desktop_address}')
-            print(f'VNC:   port:    {info_desktop_port}')
-            print(f'VNC:   user:    {user}')
-            print(f'VNC:   vnc://{info_desktop_address}:{info_desktop_port}')
+            info += f'VNC:   address: {info_desktop_address}\n'
+            info += f'VNC:   port:    {info_desktop_port}\n'
+            info += f'VNC:   user:    {user}\n'
+            info += f'VNC:   vnc://{info_desktop_address}:{info_desktop_port}\n'
+        info += '```\n'
+    print(info)
     sys.stdout.flush()
-
+    markdown_file = inputs.wiki_dir / (str(inputs.contexts['github']['run_id']) + '.md')
+    markdown_file.write_text(info)
+    git = shutil.which('git')
+    subprocess.run([git, 'add', '.'], shell=False, check=True, cwd=str(inputs.wiki_dir))
+    subprocess.run([git, 'commit', '-m', f'Add {inputs.contexts["github"]["run_id"]} run page'], shell=False, check=True, cwd=str(inputs.wiki_dir))
+    subprocess.run([git, 'push', 'origin'], shell=False, check=True, cwd=str(inputs.wiki_dir))
 
 if __name__ == '__main__':
     if sys.argv.count('--as-root'):

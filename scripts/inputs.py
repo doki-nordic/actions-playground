@@ -20,6 +20,7 @@ if platform.system() == 'Windows':
 else:
     bin_dir = Path(r'/usr/local/sbin')
 
+wiki_dir = temp_dir / 'wiki'
 
 contexts = json.loads((temp_dir / 'contexts.json').read_text())
 

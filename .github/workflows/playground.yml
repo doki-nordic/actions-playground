@@ -38,6 +38,31 @@ jobs:
     runs-on: ${{ github.event.inputs.os }}
     steps:
 
+      - name: Get Wiki
+        uses: actions/checkout@v3
+        with:
+          repository: ${{github.repository}}.wiki
+          path: wiki
+
+      - name: Set Wiki initial message
+        shell: bash
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          mv wiki $RUNNER_TEMP/
+          git config --global credential.helper ""
+          git config --global --replace-all credential.helper store
+          echo "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com" >> ~/.git-credentials
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          cd $RUNNER_TEMP/wiki
+          echo Initializing... > ${{ github.run_id }}.md
+          echo >> ${{ github.run_id }}.md
+          echo Wait a moment and refresh this page to see the updates. >> ${{ github.run_id }}.md
+          git add ${{ github.run_id }}.md
+          git commit -m "Add ${{ github.run_id }} run page"
+          git push origin
+
       # Check shell
 
       - name: Check shell
@@ -226,11 +251,12 @@ jobs:
       # Download File Browser
 
       - name: Download File Browser (windows)
-        shell: cmd
+        shell: powershell
         if: startsWith(github.event.inputs.os, 'windows')
         working-directory: ${{ runner.temp }}
         run: |
           iwr -useb https://raw.githubusercontent.com/filebrowser/get/master/get.ps1 | iex
+          echo "C:\Program Files\filebrowser" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Download File Browser (ubuntu)
         if: startsWith(github.event.inputs.os, 'ubuntu')
@@ -364,3 +390,25 @@ jobs:
           bash -c 'sleep 1'
           taskkill /IM sshd.exe /F || true
           bash -c 'sleep 3'
+
+      - name: Cleanup Wiki 1
+        if: always()
+        uses: actions/checkout@v3
+        with:
+          repository: ${{github.repository}}.wiki
+          path: wiki-cleanup-dJiw0LHS18Df
+
+      - name: Cleanup Wiki 2
+        if: always()
+        shell: bash
+        run: |
+          cd wiki-cleanup-dJiw0LHS18Df
+          git config --global credential.helper ""
+          git config --global --replace-all credential.helper store
+          echo "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com" >> ~/.git-credentials
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
+          rm -f ${{ github.run_id }}.md
+          git add .
+          git commit -m "Delete ${{ github.run_id }} run page"
+          git push origin
