@@ -1,18 +1,11 @@
 # Actions Playground
 
-Creating a GitHub Actions workflow with non-trivial commands may be annoying.
-Especially, when you have to do some experiments first, e.g. what command will work or which dependencies you need.
-It can be even harder when you are working on an operating system different from the target OS.
-Pushing and re-running the workflow each time is a nightmare.
+## TL;DR
 
-This repository tries to simplify this kind of work.
-With it, you can start a single job that waits for your commands.
-This way, you can prepare your commands for a workflow interactively without committing, pushing, and long waiting.
+Follow this procedure to start an Action jub that exposes remote terminal and waits for your commands.
+You can play with it until you establish what do you want to put in your final workflow file.
 
-# TL;DR
-
-The following procedure allows you to use just remote terminal connected to Action Runner.
-If you need something more, skip this chapter and see details below.
+If remote terminal is not enough for you, skip this chapter and see details below.
 
 One-time setup:
 
@@ -30,6 +23,17 @@ Each time you want play with the Actions:
 1. Connect using password that you set before in the `PASSWORD` secret.
 1. Play with the Actions.
 1. Finally, run `exit_job` command to terminate the Action with success.
+
+## Rationale
+
+Creating a GitHub Actions workflow with non-trivial commands may be annoying.
+Especially, when you have to do some experiments first, e.g. what command will work or which dependencies you need.
+It can be even harder when you are working on an operating system different from the target OS.
+Pushing and re-running the workflow each time is a nightmare.
+
+This repository tries to simplify this kind of work.
+With it, you can start a single job that waits for your commands.
+This way, you can prepare your commands for a workflow interactively without committing, pushing, and long waiting.
 
 # Features
 
@@ -59,14 +63,15 @@ HTTP shell | :+1: | :+1: | :+1: | :+1:
 HTTP file browser | :+1: | :+1: | :+1: | :x:
 SSH/RDP/VNC connections | :+1: | :+1: | :+1: | :x:
 Access without account | :+1: | :x: | :x: | :+1:
-Permanent address | :x: <sup>1</sup> | ?? | :+1: | :+1:/:x: <sup>2</sup>
+Permanent address | :x: <sup>1</sup> | :+1: <sup>2</sup> | :+1: | :+1:/:x: <sup>3</sup>
 Unlimited connection time | :x: 60 min | :+1: | :+1: | :+1:
-Access without dedicated software<br/>on the client side | :+1: | :+1:/:x: <sup>3</sup> | :x: | :+1:
+Access without dedicated software<br/>on the client side | :+1: | :+1:/:x: <sup>4</sup> | :x: | :+1:
 VPN | :x: | :x: | :+1: | :x:
 
 <sup>1</sup> - With pinggy.io free plan, connection will be interrupted and address will change **every 60 min**.<br/>
-<sup>2</sup> - If you create an accont on localhost.run and you will put an SSH keys there, you will get random permanent addresses.<br/>
-<sup>3</sup> - SSH, SFTP, RDP and VNC connections require dedicated zrok.io software on the client side.
+<sup>2</sup> - You can use a free subdomain names matching `*.share.zrok.io`.<br/>
+<sup>3</sup> - If you create an accont on localhost.run and you will put an SSH keys there, you will get random permanent addresses.<br/>
+<sup>4</sup> - SSH, SFTP, RDP and VNC connections require dedicated zrok.io software on the client side.
 
 The action can use one more method called **`pinggy.io + localhost.run`**.
 It uses **`localhost.run`** for HTTP shell and **`pinggy.io`** for all the other connections.
