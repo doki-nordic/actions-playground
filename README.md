@@ -9,6 +9,28 @@ This repository tries to simplify this kind of work.
 With it, you can start a single job that waits for your commands.
 This way, you can prepare your commands for a workflow interactively without committing, pushing, and long waiting.
 
+# TL;DR
+
+The following procedure allows you to use just remote terminal connected to Action Runner.
+If you need something more, skip this chapter and see details below.
+
+One-time setup:
+
+1. Create your fork of this repository on GitHub.
+1. Go to your fork's `Settings` and create new repository secret named `PASSWORD`
+   containing password that you want to use to authenticate. Use strong password.
+1. Run `Generate New Keys` workflow in your fork's Actions.
+
+Each time you want play with the Actions:
+
+1. Run `Playground` workflow in your fork's Actions, select `localhost.run` as the tunneling serice.
+1. Go to [Wiki](../../wiki) of your fork.
+1. You will see a page containing link to your terminal.
+   Wait and refresh the page if it is not ready yet,
+1. Connect using password that you set before in the `PASSWORD` secret.
+1. Play with the Actions.
+1. Finally, run `exit_job` command to terminate the Action with success.
+
 # Features
 
 After you setup and start an action, you will have multiple access methods available:
