@@ -289,7 +289,7 @@ jobs:
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
-          php -S 127.0.0.1:8080 -t $RUNNER_TEMP/_file_browser &
+          php -S 127.0.0.1:8080 -t $RUNNER_TEMP/_file_browser 2> /dev/null > /dev/null &
           env > bash_env.txt
           bash scripts/redir_fifo.sh &
           sudo --preserve-env=RUNNER_TEMP python3 scripts/main.py --as-root
@@ -319,7 +319,7 @@ jobs:
           RUNNER_TEMP: ${{ runner.temp }}
           TTYD_SHELL: ${{ env.TTYD_SHELL }}
         run: |
-          php -S 127.0.0.1:8080 -t $RUNNER_TEMP/_file_browser &
+          php -S 127.0.0.1:8080 -t $RUNNER_TEMP/_file_browser 2> /dev/null > /dev/null &
           env > bash_env.txt
           node scripts/redir_pipe.js &
           bash scripts/redir_fifo.sh &
