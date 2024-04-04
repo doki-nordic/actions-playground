@@ -259,12 +259,25 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/prasathmani/tinyfilemanager/8de16a4c8a195ebce998f55b3aa567fab5c4bedc/tinyfilemanager.php -o index.php
           echo '<?php' > config.php
           echo '$auth_users=array(' >> config.php
-          echo "'`whoami`'=>" >> config.php
+          echo "'runner'=>" >> config.php
+          echo '${{ secrets.PASSWORD }}' | php -r 'echo("\x27".password_hash(trim(file_get_contents("php://stdin")), PASSWORD_DEFAULT)."\x27");' >> config.php
+          echo ",'runneradmin'=>" >> config.php
           echo '${{ secrets.PASSWORD }}' | php -r 'echo("\x27".password_hash(trim(file_get_contents("php://stdin")), PASSWORD_DEFAULT)."\x27");' >> config.php
           echo ');' >> config.php
           echo '$root_path="/./";' >> config.php
           echo '$CONFIG = '\''{"lang":"en","error_reporting":false,"show_hidden":true,"hide_Cols":false,"theme":"dark"}'\'';' >> config.php
           echo '$readonly_users = array();' >> config.php
+
+      - name: Setup File Browser For Windows
+        shell: cmd
+        if: startsWith(github.event.inputs.os, 'windows')
+        working-directory: ${{ runner.temp }}
+        run: |
+          cd _file_browser
+          mkdir D:\DiskC
+          echo select volume C: > conf.txt
+          echo assign mount=D:\DiskC >> conf.txt
+          diskpart < conf.txt
 
       # Collect env
 
