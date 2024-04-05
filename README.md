@@ -60,7 +60,7 @@ Paid plans may have less restrictions.
 Feature | [pinggy.io](http://pinggy.io/) | [zrok.io](http://zrok.io) | [ZeroTier](https://www.zerotier.com/) | [localhost.run](http://localhost.run)
 --------|:---------:|:-------:|:--------:|:------------:
 HTTP shell | :+1: | :+1: | :+1: | :+1:
-HTTP file browser | :+1: | :+1: | :+1: | :x:
+HTTP file browser | :+1: | :+1: | :+1: | :+1:
 SSH/RDP/VNC connections | :+1: | :+1: | :+1: | :x:
 Access without account | :+1: | :x: | :x: | :+1:
 Permanent address | :x: <sup>1</sup> | :+1: <sup>2</sup> | :+1: | :+1:/:x: <sup>3</sup>
