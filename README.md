@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Follow this procedure to start an Action jub that exposes remote terminal and waits for your commands.
+Follow this procedure to start an Action job that exposes remote terminal and waits for your commands.
 You can play with it until you establish what do you want to put in your final workflow file.
 
 If remote terminal is not enough for you, skip this chapter and see details below.
@@ -45,80 +45,47 @@ After you setup and start an action, you will have multiple access methods avail
 * **RDP** - remote desktop (Windows runners only).
 * **VNC** - remote desktop (macOS runners only, VNC server on `macos-11` is broken).
 
-# Setup
-
-## 1. Choose and prepare tunneling method
-
-Action runner is not visible publically over the internet.
-We have to use some method of tunneling or VPN.
-There is no perfect solution how to do it, so you have multiple options available.
-Choose whatever suits you the best.
-
-The following table shows free plans capabilities.
-Paid plans may have less restrictions.
-
-Feature | [pinggy.io](http://pinggy.io/) | [zrok.io](http://zrok.io) | [ZeroTier](https://www.zerotier.com/) | [localhost.run](http://localhost.run)
---------|:---------:|:-------:|:--------:|:------------:
-HTTP shell | :+1: | :+1: | :+1: | :+1:
-HTTP file browser | :+1: | :+1: | :+1: | :+1:
-SSH/RDP/VNC connections | :+1: | :+1: | :+1: | :x:
-Access without account | :+1: | :x: | :x: | :+1:
-Permanent address | :x: <sup>1</sup> | :+1: <sup>2</sup> | :+1: | :+1:/:x: <sup>3</sup>
-Unlimited connection time | :x: 60 min | :+1: | :+1: | :+1:
-Access without dedicated software<br/>on the client side | :+1: | :+1:/:x: <sup>4</sup> | :x: | :+1:
-VPN | :x: | :x: | :+1: | :x:
-
-<sup>1</sup> - With pinggy.io free plan, connection will be interrupted and address will change **every 60 min**.<br/>
-<sup>2</sup> - You can use a free subdomain names matching `*.share.zrok.io`.<br/>
-<sup>3</sup> - If you create an accont on localhost.run and you will put an SSH keys there, you will get random permanent addresses.<br/>
-<sup>4</sup> - SSH, SFTP, RDP and VNC connections require dedicated zrok.io software on the client side.
-
-The action can use one more method called **`pinggy.io + localhost.run`**.
-It uses **`localhost.run`** for HTTP shell and **`pinggy.io`** for all the other connections.
-
-Go to setup instructions for one or more tunelling methods that you want to use:
-* [**pinggy.io**](docs/pinggy.io.md)
-* [**zrok.io**](docs/zrok.io.md)
-* [**ZeroTier**](docs/zerotier.md)
-* [**localhost.run**](docs/localhost.run.md)
-
-## 2. Prepare your repository
+# First-time setup
 
 1. Create your fork of this repository on GitHub.
 
-1. Add GitHub Actions secrets and variables in your fork's settings:
+1. Go to your fork settings and add GitHub Actions `PASSWORD` secret - a password that you want to use later for an authentication.
+   Use strong password.
 
-   * `PASSWORD` secret - a password that you want to use later for an authentication.
-     Use strong password.
+1. Choose and prepare tunneling method.
 
-   * only for pinggy.io:
-      * `PINGGY_IO_TOKEN` secret - token from your pinggy.io account.
+   There is no perfect free solution, so you have multiple options available.
+   Choose whatever suits you the best.
 
-   * only for zrok.io:
-      * `ZROK_IO_TOKEN` secret - token from your zrok.io account.
-
-   * only for ZeroTier:
-      * `ZEROTIER_NETWORK_ID` secret - your private network id.
-      * `ZEROTIER_ACCESS_TOKEN` secret - your ZeroTier *API Access Token* .
-      * `ZEROTIER_IP` variable - IP address. Make sure that it matches you virtual network
-        configuration and it does not conflicts with *IPv4 Auto-Assign* or
-        *IPv6 Auto-Assign* ranges or other network members.
+   &nbsp; | [Pinggy](docs/pinggy.md) | [Zrok](docs/zrok.md) | [ZeroTier](docs/zerotier.md) | [localhost.run](docs/localhost.run.md)
+   --------|:---------:|:-------:|:--------:|:------------:
+   **Connection types** | 
+   HTTP shell and file browser | :+1: | :+1: | :+1: | :+1:
+   SSH/SFTP/RDP/VNC | :+1: | :+1: | :+1: | :x:
+   VPN | :x: | :x: | :+1: | :x:
+   **Features** | 
+   Unlimited connection time | :x: 60 min | :+1: | :+1: | :+1:
+   No software installation<br/>on the client side | :+1: | :+1:/:x: <sup>4</sup> | :x: | :+1:
+   No account required | :+1: | :x: | :x: | :+1:
+   Permanent address | :x: <sup>1</sup> | :+1: <sup>2</sup> | :+1: | :+1:/:x: <sup>3</sup>
+   
+   <sup>1 - With pinggy.io free plan, connection will be interrupted and address will change **every 60 min**.<br/>
+   2 - You can use a free domain names matching `*.share.zrok.io`.<br/>
+   3 - If you create an accont on localhost.run and you will put an SSH keys there, you will get random permanent addresses.<br/>
+   4 - Only SSH, SFTP, RDP and VNC connections require dedicated zrok.io software on the client side.</sup>
+   
+   Go to setup instructions for one or more tunelling methods that you want to use:
+   * [**Pinggy**](docs/pinggy.md)
+   * [**Zrok**](docs/zrok.md)
+   * [**ZeroTier**](docs/zerotier.md)
+   * [**localhost.run**](docs/localhost.run.md)
 
 1. Run `Generate New Keys` workflow in your fork's Actions.
-   It will generate new internal keys needed for the SSH and it will check your
-   configuration.
 
-Optional tasks:
-
-* If you want to use certificate authentication in the SSH, you have to configure it.
+1. *(optional)* If you want to use certificate authentication in the SSH, you have to configure it.
   See *[SSH authentication](docs/ssh.md)*, for details.
 
-* If you want to use permanent addresses with localhost.run, see 
-  [*localhost.run account setup*](docs/localhost.run.account.md).
-
 # Usage
-
-## 1. Connect to the runner
 
 1. Go to your fork's `Actions`, select `Playground` workflow and `Run workflow` button.
    You can select which OS to start and which tunneling method to use. For Windows, you can also select
@@ -138,7 +105,7 @@ Optional tasks:
    exit_job
    ```
 
-## 2. Using dedicated tools on a runner
+# Using dedicated tools on a runner
 
 When you connect, SSH will show you a banner with information how to use tools
 to simplify work with the runner. On some clients, you may need to scroll up a bit to see it.
