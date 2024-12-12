@@ -1,0 +1,64 @@
+
+
+import shutil
+import subprocess
+from pathlib import Path
+import time
+from service import Service
+import conf
+from proc import ProcessHandler
+from utils import download
+from tunnel import ConnectionType, Tunnel
+
+
+class ServiceTerm(Service):
+
+    def setup(self, tunnel: Tunnel):
+        super().setup(tunnel)
+        tunnel.setup('term', ConnectionType.HTTP, conf.term.port, conf.term.endpoint, conf.term.client_port)
+        if conf.is_linux:
+            self.exe_file = conf.temp_dir / 'ttyd'
+            if not self.exe_file.exists():
+                download(conf.ttyd_url, self.exe_file)
+                self.exe_file.chmod(0o755)
+        elif conf.is_windows:
+            self.exe_file = conf.temp_dir / 'ttyd.exe'
+            if not self.exe_file.exists():
+                download(conf.ttyd_url, self.exe_file)
+        elif conf.is_macos:
+            try:
+                self.exe_file = Path(shutil.which('ttyd'))
+            except:
+                subprocess.run(['brew', 'install', 'ttyd'], check=True, shell=True)
+                self.exe_file = Path(shutil.which('ttyd'))
+
+    def start(self):
+        self._start_process()
+        self.tunnel.start()
+
+    def _start_process(self):
+        self._process = ProcessHandler([
+            self.exe_file,
+            '--writable',
+            '--debug', '0',
+            '--port', str(conf.term.port),
+            '--cwd', '/home/doki',
+            '--credential', 'runneradmin:123',
+            shutil.which('bash'),
+            ])
+        self._process.on_exit = self._process_on_exit
+
+    def _process_on_exit(self, process: subprocess.Popen, forced: bool):
+        if not forced:
+            time.sleep(1)
+            self._start_process()
+
+    def is_started(self):
+        return self.tunnel.is_started()
+
+    def stop(self):
+        self.tunnel.stop()
+        self._process.terminate(10)
+
+    def is_stopped(self):
+        return self.tunnel.is_stopped() and self._process.is_terminated()

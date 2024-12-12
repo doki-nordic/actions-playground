@@ -92,10 +92,11 @@ Go to setup instructions for one or more tunelling methods that you want to use:
      Use strong password.
 
    * only for pinggy.io:
-      * `PINGGY_IO_TOKEN` secret - token from your pinggy.io account.
+      * `PINGGY_IO_TOKEN` secret - optional token from your pinggy.io account.
 
    * only for zrok.io:
-      * `ZROK_IO_TOKEN` secret - token from your zrok.io account.
+      * `ZROK_IO_TOKEN` secret - required token from your zrok.io account.
+      * `ZROK_NAMES` variable - optional names of the services.
 
    * only for ZeroTier:
       * `ZEROTIER_NETWORK_ID` secret - your private network id.
