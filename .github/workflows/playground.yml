@@ -82,11 +82,11 @@ jobs:
 
       - shell: cmd
         if: startsWith(github.event.inputs.os, 'windows')
-        run: echo "_PLAYGROUND_IGNORE_PYTHON=python.exe" >> %GITHUB_ENV%
+        run: echo _PLAYGROUND_IGNORE_PYTHON=python.exe >> %GITHUB_ENV%
 
       - shell: bash
         if: (!startsWith(github.event.inputs.os, 'windows'))
-        run: echo "_PLAYGROUND_IGNORE_PYTHON=python3" >> $GITHUB_ENV
+        run: echo _PLAYGROUND_IGNORE_PYTHON=python3 >> $GITHUB_ENV
 
       # Collect environment variables for different shells
 
@@ -151,7 +151,7 @@ jobs:
         run: |
           curl -L https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.win32.exe --output ttyd.exe
           net stop /y W3SVC
-          netsh advfirewall firewall add rule name="Open Port 80" dir=in action=allow protocol=TCP localport=80
+          netsh advfirewall firewall add rule name="Open Port 8080" dir=in action=allow protocol=TCP localport=8080
 
       - name: Download ttyd (ubuntu)
         if: startsWith(github.event.inputs.os, 'ubuntu')
@@ -174,7 +174,9 @@ jobs:
         if: (!startsWith(github.event.inputs.os, 'windows'))
         working-directory: ${{ runner.temp }}/repo
         run: |
-          sudo -u "`whoami`" ${{ env.TTYD_CMD }} -W -d 0 -p 80 -w '${{ github.workspace }}' -c 'runner:${{ secrets.PASSWORD }}' bash &
+          sudo -u "`whoami`" ${{ env.TTYD_CMD }} -W -d 0 -p 8080 -w '${{ github.workspace }}' -c 'runner:${{ secrets.PASSWORD }}' bash &
+          sudo ps aux
+          ps aux
           sleep 21600
 
       - name: Your work starts here (windows non-bash)
@@ -184,7 +186,7 @@ jobs:
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
-          start /i /b "" %RUNNER_TEMP%\ttyd.exe -W -d 0 -p 80 -w "${{ github.workspace }}" -c "runneradmin:${{ secrets.PASSWORD }}" cmd.exe
+          start /i /b "" %RUNNER_TEMP%\ttyd.exe -W -d 0 -p 8080 -w "${{ github.workspace }}" -c "runneradmin:${{ secrets.PASSWORD }}" cmd.exe
           python -c "import time; time.sleep(21600)"
 
       # Upload an Artifact
