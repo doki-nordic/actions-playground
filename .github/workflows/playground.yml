@@ -7,86 +7,55 @@ on:
         description: OS version
         options:
           - ubuntu-latest
+          - ubuntu-24.04
           - ubuntu-22.04
           - ubuntu-20.04
           - windows-latest
           - windows-2022
           - windows-2019
           - macos-latest
+          - macos-15
+          - macos-14
           - macos-13
           - macos-12
-          - macos-11
-      service:
-        type: choice
-        description: Tunneling service
-        options:
-          - pinggy.io and localhost.run
-          - pinggy.io
-          - zrok.io
-          - ZeroTier
-          - localhost.run
-      shell:
-        type: choice
-        description: Shell
-        options:
-          - bash
-          - cmd
-          - powershell
-          - pwsh
 jobs:
   action:
     runs-on: ${{ github.event.inputs.os }}
     steps:
 
-      - name: Get Wiki
-        uses: actions/checkout@v3
-        with:
-          repository: ${{github.repository}}.wiki
-          path: wiki
-
-      - name: Set Wiki initial message
-        shell: bash
-        env:
-          RUNNER_TEMP: ${{ runner.temp }}
-        run: |
-          mv wiki $RUNNER_TEMP/
-          git config --global credential.helper ""
-          git config --global --replace-all credential.helper store
-          echo "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com" >> ~/.git-credentials
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git config --global user.name "${{ github.actor }}"
-          cd $RUNNER_TEMP/wiki
-          echo Initializing... > ${{ github.run_id }}.md
-          echo >> ${{ github.run_id }}.md
-          echo Wait a moment and refresh this page to see the updates. >> ${{ github.run_id }}.md
-          git add ${{ github.run_id }}.md
-          git commit -m "Add ${{ github.run_id }} run page"
-          git push origin
-
-      # Check shell
-
-      - name: Check shell
-        shell: bash
-        if: github.event.inputs.shell != 'bash' && !startsWith(github.event.inputs.os, 'windows')
-        run: |
-          echo Shell can be changed only on Windows
-          exit 1
-
       # Connect with ZeroTier
 
       - uses: zerotier/github-action@v1.0.1
-        if: github.event.inputs.service == 'ZeroTier'
         with:
           network_id: ${{ secrets.NETWORK_ID }}
           auth_token: ${{ secrets.ACCESS_TOKEN  }}
 
       - uses: kildom/zerotier-management-action@v1.0.0
-        if: github.event.inputs.service == 'ZeroTier'
-        id: zerotier
         with:
           auth_token: ${{ secrets.ACCESS_TOKEN  }}
           ip: '${{ secrets.IP }} ${{ vars.IP }}'
           name: 'Actions Playground'
+
+      # Checkout repo and keys and move to runner.temp
+
+      - name: Get main branch
+        uses: actions/checkout@v3
+        with:
+          path: repo
+
+      - name: Get keys branch
+        uses: actions/checkout@v3
+        with:
+          ref: keys
+          path: keys
+
+      - name: Move repo and keys
+        shell: bash
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          mv repo $RUNNER_TEMP/
+          mv keys $RUNNER_TEMP/repo/
 
       # Copy Github action contexts
 
@@ -109,118 +78,69 @@ jobs:
           }
           EnDOfThIssTrIng
 
-      # Checkout repo and keys and move to runner.temp
+      # Make sure that we use correct python executable
 
-      - name: Get main branch
-        uses: actions/checkout@v3
-        with:
-          path: repo
+      - shell: cmd
+        if: startsWith(github.event.inputs.os, 'windows')
+        run: echo "_PLAYGROUND_IGNORE_PYTHON=python.exe" >> %GITHUB_ENV%
 
-      - name: Get keys branch
-        uses: actions/checkout@v3
-        with:
-          ref: keys
-          path: keys
+      - shell: bash
+        if: (!startsWith(github.event.inputs.os, 'windows'))
+        run: echo "_PLAYGROUND_IGNORE_PYTHON=python3" >> $GITHUB_ENV
 
-      - name: Keep cache keys
-        shell: bash
+      # Collect environment variables for different shells
+
+      - shell: bash
+        working-directory: ${{ runner.temp }}/repo
         run: |
-          echo PIP_KEY=${{ github.event.inputs.os }}-${{ hashFiles('repo/scripts/requirements.txt') }}-`date +%Y%m` >> $GITHUB_ENV
-          pip3 cache dir > t || pip cache dir > t
-          echo PIP_CACHE_DIR=`cat t` >> $GITHUB_ENV
-          rm t
+          $_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../bash.json
 
-      - name: Move repo and keys
-        shell: bash
-        env:
-          RUNNER_TEMP: ${{ runner.temp }}
+      - shell: cmd
+        if: startsWith(github.event.inputs.os, 'windows')
+        working-directory: ${{ runner.temp }}/repo
         run: |
-          mv repo $RUNNER_TEMP/
-          mv keys $RUNNER_TEMP/repo/
+          %_PLAYGROUND_IGNORE_PYTHON% src\script\collect_env.py > ..\cmd.json
+
+      - shell: pwsh
+        working-directory: ${{ runner.temp }}/repo
+        run: |
+          & $env:_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../pwsh.json
+
+      - shell: bash
+        working-directory: ${{ runner.temp }}/repo
+        run: |
+          $_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../bash2.json
+
+      - shell: cmd
+        if: startsWith(github.event.inputs.os, 'windows')
+        working-directory: ${{ runner.temp }}/repo
+        run: |
+          %_PLAYGROUND_IGNORE_PYTHON% src\script\collect_env.py > ..\cmd2.json
+
+      - shell: pwsh
+        working-directory: ${{ runner.temp }}/repo
+        run: |
+          & $env:_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../pwsh2.json
 
       # Change password
 
-      - name: Password (ubuntu)
-        if: startsWith(github.event.inputs.os, 'ubuntu')
+      - if: startsWith(github.event.inputs.os, 'ubuntu')
         run: |
           echo -e "${{ secrets.PASSWORD }}\n${{ secrets.PASSWORD }}" | sudo passwd `whoami`
 
-      - name: Password (macos) and VNC
-        if: startsWith(github.event.inputs.os, 'macos')
+      - if: startsWith(github.event.inputs.os, 'macos')
         run: |
           sysadminctl -adminUser runner \
-            -adminPassword `sudo python3 ${{ runner.temp }}/repo/scripts/getpwd.py` \
+            -adminPassword `sudo python3 ${{ runner.temp }}/repo/src/script/getpwd.py` \
             -resetPasswordFor runner -newPassword ${{ secrets.PASSWORD }}
           sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
             -activate -configure -access -on -clientopts -setvnclegacy -vnclegacy yes \
             -clientopts -setvncpw -vncpw ${{ secrets.PASSWORD }} -restart -agent -privs -all
 
-      - name: Password (windows)
+      - if: startsWith(github.event.inputs.os, 'windows')
         shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
         run: |
           net user runneradmin "${{ secrets.PASSWORD }}"
-
-      # Cache
-
-      - uses: actions/cache@v3
-        with:
-          path: ${{ env.PIP_CACHE_DIR }}
-          key: ${{ env.PIP_KEY }}
-
-      # Install Windows SSH
-
-      - name: Install SSH (windows)
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}/repo
-        shell: cmd
-        run: |
-          curl -L -o sshd.msi https://github.com/PowerShell/Win32-OpenSSH/releases/download/v9.1.0.0p1-Beta/OpenSSH-Win64-v9.1.0.0.msi
-          msiexec /quiet /qn /i sshd.msi
-          net stop sshd
-      - name: Set cmd as default shell (windows)
-        shell: powershell
-        if: github.event.inputs.shell == 'cmd'
-        run: |
-          echo "TTYD_SHELL=C:\Windows\System32\cmd.exe" >> $ENV:GITHUB_ENV
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\cmd.exe" -PropertyType String -Force
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShellCommandOption -Value "/c" -PropertyType String -Force
-      - name: Set powershell as default shell (windows)
-        shell: powershell
-        if: github.event.inputs.shell == 'powershell'
-        run: |
-          echo "TTYD_SHELL=C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" >> $ENV:GITHUB_ENV
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShellCommandOption -Value "/c" -PropertyType String -Force
-      - name: Set pwsh as default shell (windows)
-        shell: powershell
-        if: github.event.inputs.shell == 'pwsh'
-        run: |
-          echo "TTYD_SHELL=C:\Program Files\PowerShell\7\pwsh.exe" >> $ENV:GITHUB_ENV
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Program Files\PowerShell\7\pwsh.exe" -PropertyType String -Force
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShellCommandOption -Value "/c" -PropertyType String -Force
-      - name: Set bash as default shell (windows)
-        shell: powershell
-        if: github.event.inputs.shell == 'bash' && startsWith(github.event.inputs.os, 'windows')
-        run: |
-          echo "TTYD_SHELL=C:\Program Files\Git\usr\bin\bash.exe" >> $ENV:GITHUB_ENV
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Program Files\Git\usr\bin\bash.exe" -PropertyType String -Force
-          New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShellCommandOption -Value "-c" -PropertyType String -Force
-
-      # Python requirements
-
-      - name: Python requirements (non-windows)
-        if: (!startsWith(github.event.inputs.os, 'windows'))
-        working-directory: ${{ runner.temp }}/repo
-        run: |
-          sudo pip3 install -r scripts/requirements.txt
-
-      - name: Python requirements (windows)
-        shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}/repo
-        run: |
-          pip install -r scripts/requirements.txt
 
       # Download ttyd
 
@@ -248,97 +168,24 @@ jobs:
           brew install ttyd
           echo TTYD_CMD=ttyd >> $GITHUB_ENV
 
-      # Download File Browser
-
-      - name: Download And Setup File Browser
-        working-directory: ${{ runner.temp }}
-        shell: bash
-        run: |
-          mkdir -p _file_browser
-          cd _file_browser
-          curl -fsSL https://raw.githubusercontent.com/prasathmani/tinyfilemanager/8de16a4c8a195ebce998f55b3aa567fab5c4bedc/tinyfilemanager.php -o index.php
-          echo '<?php' > config.php
-          echo '$auth_users=array(' >> config.php
-          echo "'runner'=>" >> config.php
-          echo '${{ secrets.PASSWORD }}' | php -r 'echo("\x27".password_hash(trim(file_get_contents("php://stdin")), PASSWORD_DEFAULT)."\x27");' >> config.php
-          echo ",'runneradmin'=>" >> config.php
-          echo '${{ secrets.PASSWORD }}' | php -r 'echo("\x27".password_hash(trim(file_get_contents("php://stdin")), PASSWORD_DEFAULT)."\x27");' >> config.php
-          echo ');' >> config.php
-          echo '$root_path="/./";' >> config.php
-          echo '$CONFIG = '\''{"lang":"en","error_reporting":false,"show_hidden":true,"hide_Cols":false,"theme":"dark"}'\'';' >> config.php
-          echo '$readonly_users = array();' >> config.php
-
-      - name: Setup File Browser For Windows
-        shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}
-        run: |
-          cd _file_browser
-          mkdir D:\DiskC
-          echo select volume C: > conf.txt
-          echo assign mount=D:\DiskC >> conf.txt
-          diskpart < conf.txt
-
-      # Collect env
-
-      - name: Collect env (cmd)
-        shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}
-        run: |
-          python -c "import json; import os; print(json.dumps(dict(os.environ)))" > cmd_env.json
-
-      - name: Collect env
-        shell: bash
-        working-directory: ${{ runner.temp }}
-        run: |
-          env > bash_env.txt
-
       # Do rest of the work in Python, it's easier there
 
       - name: Your work starts here (non-windows)
         if: (!startsWith(github.event.inputs.os, 'windows'))
         working-directory: ${{ runner.temp }}/repo
-        env:
-          RUNNER_TEMP: ${{ runner.temp }}
         run: |
-          php -S 127.0.0.1:8080 -t $RUNNER_TEMP/_file_browser 2> /dev/null > /dev/null &
-          env > bash_env.txt
-          bash scripts/redir_fifo.sh &
-          sudo --preserve-env=RUNNER_TEMP python3 scripts/main.py --as-root
           sudo -u "`whoami`" ${{ env.TTYD_CMD }} -W -d 0 -p 80 -w '${{ github.workspace }}' -c 'runner:${{ secrets.PASSWORD }}' bash &
-          python3 scripts/main.py
+          sleep 21600
 
       - name: Your work starts here (windows non-bash)
         shell: cmd
-        if: github.event.inputs.shell != 'bash' && startsWith(github.event.inputs.os, 'windows')
+        if: startsWith(github.event.inputs.os, 'windows')
         working-directory: ${{ runner.temp }}/repo
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
-          start /b "" php -S 127.0.0.1:8080 -t %RUNNER_TEMP%\_file_browser
-          python -c "import json; import os; print(json.dumps(dict(os.environ)))" > cmd_env.json
-          start /b "" node scripts\redir_pipe.js
-          start /b "" bash scripts/redir_fifo.sh
-          python scripts/main.py --as-root
-          start /i /b "" %RUNNER_TEMP%\ttyd.exe -W -d 0 -p 80 -w "${{ github.workspace }}" -c "runneradmin:${{ secrets.PASSWORD }}" "${{ env.TTYD_SHELL }}"
-          python scripts/main.py
-
-      - name: Your work starts here (windows bash)
-        shell: bash
-        if: github.event.inputs.shell == 'bash' && startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}/repo
-        env:
-          RUNNER_TEMP: ${{ runner.temp }}
-          TTYD_SHELL: ${{ env.TTYD_SHELL }}
-        run: |
-          php -S 127.0.0.1:8080 -t $RUNNER_TEMP/_file_browser 2> /dev/null > /dev/null &
-          env > bash_env.txt
-          node scripts/redir_pipe.js &
-          bash scripts/redir_fifo.sh &
-          python scripts/main.py --as-root
-          $RUNNER_TEMP/ttyd.exe -W -d 0 -p 80 -w `ghctx -p github.workspace` -c 'runneradmin:${{ secrets.PASSWORD }}' "$TTYD_SHELL" &
-          python scripts/main.py
+          start /i /b "" %RUNNER_TEMP%\ttyd.exe -W -d 0 -p 80 -w "${{ github.workspace }}" -c "runneradmin:${{ secrets.PASSWORD }}" cmd.exe
+          python -c "import time; time.sleep(21600)"
 
       # Upload an Artifact
 
@@ -348,68 +195,3 @@ jobs:
           path: ${{ runner.temp }}/artifact/*
           if-no-files-found: ignore
           retention-days: 5
-
-      # Try to disconnect clients gracefully
-
-      - name: Try to disconnect clients gracefully (non-windows)
-        if: (!startsWith(github.event.inputs.os, 'windows'))
-        run: |
-          kill $(ps aux | grep sshd | grep runner | awk '{print $2}') || true
-          bash -c 'sleep 5'
-
-      - name: Try to disconnect clients gracefully (windows)
-        shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        run: |
-          net stop sshd
-          bash -c 'sleep 3'
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          bash -c 'sleep 1'
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          bash -c 'sleep 1'
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          bash -c 'sleep 1'
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          bash -c 'sleep 1'
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          bash -c 'sleep 1'
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          taskkill /IM sshd.exe /T || true
-          bash -c 'sleep 7'
-          taskkill /IM sshd.exe /F || true
-          bash -c 'sleep 1'
-          taskkill /IM sshd.exe /F || true
-          bash -c 'sleep 3'
-
-      - name: Cleanup Wiki 1
-        if: always()
-        uses: actions/checkout@v3
-        with:
-          repository: ${{github.repository}}.wiki
-          path: wiki-cleanup-dJiw0LHS18Df
-
-      - name: Cleanup Wiki 2
-        if: always()
-        shell: bash
-        run: |
-          cd wiki-cleanup-dJiw0LHS18Df
-          git config --global credential.helper ""
-          git config --global --replace-all credential.helper store
-          echo "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com" >> ~/.git-credentials
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git config --global user.name "${{ github.actor }}"
-          rm -f ${{ github.run_id }}.md
-          git add .
-          git commit -m "Delete ${{ github.run_id }} run page"
-          git push origin
