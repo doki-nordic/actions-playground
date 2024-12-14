@@ -1,11 +1,12 @@
 
 import re
 import time
-import conf
 import subprocess
-from proc import ProcessHandler, run_ret
-from utils import CallOnce, add_cleanup_command, download, untar
-from tunnel import ConnectionType, Tunnel
+
+import lib.conf as conf
+from lib.proc import ProcessHandler, run_ret
+from lib.utils import CallOnce, add_cleanup_command, download, untar
+from lib.tunnel import ConnectionType, Tunnel
 
 tar_file = conf.temp_dir / 'zrok.tar.gz'
 exe_dir = conf.temp_dir / 'zrok'

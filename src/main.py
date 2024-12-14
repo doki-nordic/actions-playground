@@ -1,11 +1,11 @@
 
 
 import time
-import conf
-from service_term import ServiceTerm
-from utils import poll_objects
-from tunnel import ConnectionType
-from zrok import Zrok
+import lib.conf as conf
+from lib.service_term import ServiceTerm
+from lib.utils import poll_objects
+from lib.tunnel import ConnectionType
+from lib.zrok import Zrok
 
 t = ServiceTerm()
 t.setup(Zrok())

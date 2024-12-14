@@ -1,14 +1,14 @@
 
-
+import time
 import shutil
 import subprocess
 from pathlib import Path
-import time
-from service import Service
-import conf
-from proc import ProcessHandler
-from utils import download
-from tunnel import ConnectionType, Tunnel
+
+import lib.conf as conf
+from lib.service import Service
+from lib.proc import ProcessHandler
+from lib.utils import download, firewall_open
+from lib.tunnel import ConnectionType, Tunnel
 
 
 class ServiceTerm(Service):
@@ -31,6 +31,7 @@ class ServiceTerm(Service):
             except:
                 subprocess.run(['brew', 'install', 'ttyd'], check=True, shell=True)
                 self.exe_file = Path(shutil.which('ttyd'))
+        firewall_open(conf.term.port)
 
     def start(self):
         self._start_process()

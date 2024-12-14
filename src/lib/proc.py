@@ -1,13 +1,13 @@
 
 import os
 import time
-import subprocess
-import conf
 import signal
-from concurrent.futures import ThreadPoolExecutor
+import subprocess
 from enum import Enum
+from concurrent.futures import ThreadPoolExecutor
 
-from utils import add_polling_object, call_cleanup_script, delete_polling_object, poll_objects
+import lib.conf as conf
+from lib.utils import add_polling_object, delete_polling_object, poll_objects
 
 
 def interrupt_process(process: subprocess.Popen):
@@ -195,21 +195,5 @@ def _test_handler():
     print('-- Tests done')
     file.unlink()
 
-def cleanup_command(*args, **kwargs):
-    retry = [1, 0]
-    if 'retry' in kwargs:
-        retry = kwargs['retry']
-        del kwargs['retry']
-    for i in range(retry[0]):
-        if i > 0:
-            time.sleep(retry[1])
-        try:
-            ret = subprocess.run(*args, **kwargs)
-            if ret.returncode == 0:
-                return
-        except:
-            pass
-
 if __name__ == "__main__":
-    call_cleanup_script(cleanup_command)
     _test_handler()

@@ -331,6 +331,13 @@ def update_connection_info():
     subprocess.run([git, 'add', '.'], shell=False, check=True, cwd=str(inputs.wiki_dir))
     subprocess.run([git, 'commit', '-m', f'Add {inputs.contexts["github"]["run_id"]} run page'], shell=False, check=True, cwd=str(inputs.wiki_dir))
     subprocess.run([git, 'push', 'origin'], shell=False, check=True, cwd=str(inputs.wiki_dir))
+    #TODO: Format of zrok.io TCP connection, e.g. SSH:
+    # ```
+    # zrok access private syf95bp8e6mw -b localhost:40022
+    # ```
+    # ```
+    # ssh -p 40022 runner@localhost
+    # ```
 
 if __name__ == '__main__':
     if sys.argv.count('--as-root'):

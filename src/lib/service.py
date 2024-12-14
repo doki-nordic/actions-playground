@@ -1,6 +1,6 @@
 
 
-from tunnel import Tunnel
+from lib.tunnel import Tunnel
 
 
 class Service:

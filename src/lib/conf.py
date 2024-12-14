@@ -23,7 +23,7 @@ is_windows = system == 'windows'
 is_linux = system == 'linux'
 is_macos = system == 'darwin'
 
-scripts_dir = Path(__file__).parent
+scripts_dir = Path(__file__).parent.parent
 root_dir = scripts_dir.parent
 data_dir = root_dir / 'data'
 keys_dir = root_dir / 'keys'

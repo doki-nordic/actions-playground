@@ -93,34 +93,34 @@ jobs:
       - shell: bash
         working-directory: ${{ runner.temp }}/repo
         run: |
-          $_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../bash.json
+          $_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../bash.json
 
       - shell: cmd
         if: startsWith(github.event.inputs.os, 'windows')
         working-directory: ${{ runner.temp }}/repo
         run: |
-          %_PLAYGROUND_IGNORE_PYTHON% src\script\collect_env.py > ..\cmd.json
+          %_PLAYGROUND_IGNORE_PYTHON% src\collect_env.py > ..\cmd.json
 
       - shell: pwsh
         working-directory: ${{ runner.temp }}/repo
         run: |
-          & $env:_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../pwsh.json
+          & $env:_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../pwsh.json
 
       - shell: bash
         working-directory: ${{ runner.temp }}/repo
         run: |
-          $_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../bash2.json
+          $_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../bash2.json
 
       - shell: cmd
         if: startsWith(github.event.inputs.os, 'windows')
         working-directory: ${{ runner.temp }}/repo
         run: |
-          %_PLAYGROUND_IGNORE_PYTHON% src\script\collect_env.py > ..\cmd2.json
+          %_PLAYGROUND_IGNORE_PYTHON% src\collect_env.py > ..\cmd2.json
 
       - shell: pwsh
         working-directory: ${{ runner.temp }}/repo
         run: |
-          & $env:_PLAYGROUND_IGNORE_PYTHON src/script/collect_env.py > ../pwsh2.json
+          & $env:_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../pwsh2.json
 
       # Change password
 
@@ -131,7 +131,7 @@ jobs:
       - if: startsWith(github.event.inputs.os, 'macos')
         run: |
           sysadminctl -adminUser runner \
-            -adminPassword `sudo python3 ${{ runner.temp }}/repo/src/script/getpwd.py` \
+            -adminPassword `sudo python3 ${{ runner.temp }}/repo/src/getpwd.py` \
             -resetPasswordFor runner -newPassword ${{ secrets.PASSWORD }}
           sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
             -activate -configure -access -on -clientopts -setvnclegacy -vnclegacy yes \
@@ -192,8 +192,18 @@ jobs:
       # Upload an Artifact
 
       - name: Upload an Artifact
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           path: ${{ runner.temp }}/artifact/*
           if-no-files-found: ignore
           retention-days: 5
+
+      # Cleanup
+
+      - name: CLeanup
+        if: always()
+        shell: bash
+        working-directory: ${{ runner.temp }}/repo
+        run: |
+          $_PLAYGROUND_IGNORE_PYTHON src/cleanup.py
