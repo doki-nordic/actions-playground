@@ -20,6 +20,8 @@ ttyd_urls = {
     'darwin': None,
 }
 
+files_url = 'https://raw.githubusercontent.com/prasathmani/tinyfilemanager/refs/tags/2.6/tinyfilemanager.php'
+
 #################################################################################
 
 system = platform.system().lower()
@@ -57,8 +59,9 @@ def parse_settings_conf():
         config.read_string('[conf]\n' + ctx.vars.CONF)
         for name, value in config['conf'].items():
             result[name.upper()] = str(value)
-    for name, value in ctx.secrets.__dict__.items():
-        result[name.upper()] = value
+    for name, value in ctx.vars.__dict__.items():
+        if name.upper() != 'CONF':
+            result[name.upper()] = value
     return result
 
 def get_value(name, default=None) -> 'str|None':
@@ -75,6 +78,12 @@ term = SimpleNamespace(
     endpoint=get_value('TERM_ENDPOINT', None),
     port=get_value('TERM_PORT', 80),
     client_port=get_value('TERM_CLIENT_PORT', 9980),
+)
+
+files = SimpleNamespace(
+    endpoint=get_value('FILES_ENDPOINT', None),
+    port=get_value('FILES_PORT', 81),
+    client_port=get_value('FILES_CLIENT_PORT', 9981),
 )
 
 ssh = SimpleNamespace(
