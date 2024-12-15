@@ -92,6 +92,12 @@ ssh = SimpleNamespace(
     client_port=get_value('SSH_CLIENT_PORT', 9922),
 )
 
+rdp = SimpleNamespace(
+    endpoint=get_value('RDP_ENDPOINT', None),
+    port=3389,
+    client_port=get_value('RDP_CLIENT_PORT', 9989),
+)
+
 try:
     sudo = shutil.which('sudo')
 except:

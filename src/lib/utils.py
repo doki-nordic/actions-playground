@@ -130,7 +130,7 @@ class CallOnce:
         return self.result
 
 
-def firewall_open(port: int, program):
+def firewall_open(port: int, program: 'str|None'):
     if conf.is_windows:
         subprocess.run([
             shutil.which('netsh'), 'advfirewall',
@@ -140,7 +140,8 @@ def firewall_open(port: int, program):
         ], check=True, shell=False)
     elif conf.is_linux:
         #subprocess.run(['ufw', 'allow', str(port)], check=True, shell=True)
-        subprocess.run([conf.sudo, 'setcap', 'cap_net_bind_service=+ep', str(Path(program).resolve())], check=True)
+        if program:
+            subprocess.run([conf.sudo, 'setcap', 'cap_net_bind_service=+ep', str(Path(program).resolve())], check=True)
     # elif conf.is_macos:
     #     subprocess.run(['brew', 'services', 'start', 'firewall', '--args', 'add', 'port', str(port), 'tcp'])
 

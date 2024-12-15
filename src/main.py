@@ -7,21 +7,32 @@ from lib.service_files import ServiceFiles
 from lib.utils import poll_objects
 from lib.tunnel import ConnectionType
 from lib.zrok import Zrok
+from lib.service import Service
+from lib.service_rdp import ServiceRDP
+
+services: 'list[Service]' = []
 
 t = ServiceTerm()
 t.setup(Zrok())
+services.append(t)
+
 f = ServiceFiles()
 f.setup(Zrok())
+services.append(f)
+
+rdp = ServiceRDP()
+rdp.setup(Zrok())
+services.append(rdp)
 
 ssh = Zrok()
 ssh.setup('ssh', ConnectionType.SSH, 22, 'dokissh', 9922)
+services.append(ssh)
 
 print('===== STARTING')
 
-t.start()
-f.start()
-ssh.start()
-while (not t.is_started()) or (not f.is_started()) or (not ssh.is_started()):
+for service in services:
+    service.start()
+while [True for service in services if not service.is_started()]:
     poll_objects()
     time.sleep(0.1)
 
@@ -29,9 +40,11 @@ print('===== RUNNING')
 
 while True:
     poll_objects()
-    print(t.tunnel.get_info())
-    print(f.tunnel.get_info())
-    print(ssh.get_info())
+    for service in services:
+        if hasattr(service, 'tunnel'):
+            print(service.tunnel.get_info())
+        else:
+            print(service.get_info())
     time.sleep(3)
     if (conf.temp_dir / 'a').exists():
         (conf.temp_dir / 'a').rename(conf.temp_dir / 'b')
@@ -39,10 +52,9 @@ while True:
 
 print('===== STOPPING')
 
-t.stop()
-f.stop()
-ssh.stop()
-while (not t.is_stopped()) or (not f.is_stopped()) or (not ssh.is_stopped()):
+for service in services:
+    service.stop()
+while [True for service in services if not service.is_stopped()]:
     poll_objects()
     time.sleep(0.1)
 
