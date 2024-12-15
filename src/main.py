@@ -8,24 +8,29 @@ from lib.tunnel import ConnectionType
 from lib.zrok import Zrok
 from lib.service import Service
 from lib.service_rdp import ServiceRDP
+from lib.service_ssh import ServiceSSH
 
 services: 'list[Service]' = []
 
-t = ServiceTerm()
-t.setup(Zrok())
-services.append(t)
+# t = ServiceTerm()
+# t.setup(Zrok())
+# services.append(t)
 
-f = ServiceFiles()
-f.setup(Zrok())
-services.append(f)
+# f = ServiceFiles()
+# f.setup(Zrok())
+# services.append(f)
 
-rdp = ServiceRDP()
+# rdp = ServiceRDP()
+# rdp.setup(Zrok())
+# services.append(rdp)
+
+rdp = ServiceSSH()
 rdp.setup(Zrok())
 services.append(rdp)
 
-ssh = Zrok()
-ssh.setup('ssh', ConnectionType.SSH, 22, 'dokissh', 9922)
-services.append(ssh)
+# ssh = Zrok()
+# ssh.setup('ssh', ConnectionType.SSH, 22, 'dokissh', 9922)
+# services.append(ssh)
 
 print('===== STARTING')
 
@@ -42,7 +47,7 @@ while True:
     for service in services:
         if hasattr(service, 'tunnel'):
             print(service.tunnel.get_info())
-        else:
+        elif hasattr(service, 'get_info'):
             print(service.get_info())
     time.sleep(3)
     if (conf.temp_dir / 'a').exists():

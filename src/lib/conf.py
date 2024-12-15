@@ -88,7 +88,7 @@ files = SimpleNamespace(
 
 ssh = SimpleNamespace(
     endpoint=get_value('SSH_ENDPOINT', None),
-    port=get_value('SSH_PORT', 22),
+    port=22,
     client_port=get_value('SSH_CLIENT_PORT', 9922),
 )
 

@@ -158,3 +158,15 @@ def get_environment(pwd):
         elif name.startswith('GITHUB_'):
             env[name] = os.getenv(name, env[name])
     return env
+
+
+global_unpack_once = CallOnce()
+
+
+def unpack_keys(_checked=False):
+    if not _checked:
+        return global_unpack_once.call(unpack_keys, True)
+    import pyzipper
+    with pyzipper.AESZipFile(conf.keys_dir / 'keys.zip') as zf:
+        zf.setpassword(bytes(ctx.secrets.PASSWORD, 'utf-8'))
+        zf.extractall(conf.keys_dir)
