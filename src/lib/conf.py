@@ -22,6 +22,8 @@ ttyd_urls = {
 
 files_url = 'https://raw.githubusercontent.com/prasathmani/tinyfilemanager/refs/tags/2.6/tinyfilemanager.php'
 
+win_sshd_url = 'https://github.com/PowerShell/Win32-OpenSSH/releases/download/v9.8.1.0p1-Preview/OpenSSH-Win64-v9.8.1.0.msi'
+
 #################################################################################
 
 system = platform.system().lower()

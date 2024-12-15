@@ -27,14 +27,22 @@ def replace_host_keys(ssh_keys_dir: Path):
             dst.write(src_pub_file.read_bytes())
 
 
+def install_win_sshd():
+    sshd_msi = conf.temp_dir / 'sshd.msi'
+    if not sshd_msi.exists():
+        download(conf.win_sshd_url, sshd_msi)
+        subprocess.run(['msiexec', '/quiet', '/qn', '/i', str(sshd_msi)], check=True, shell=True)
+
+
 class ServiceSSH(Service):
 
     def setup(self, tunnel: Tunnel):
         super().setup(tunnel)
         tunnel.setup('ssh', ConnectionType.SSH, conf.ssh.port, conf.ssh.endpoint, conf.ssh.client_port)
         if conf.is_windows:
-            subprocess.run(['net', 'stop', 'sshd'], check=True)
-            self.ssh_keys_dir = Path('.') # TODO: keys path in windows
+            install_win_sshd()
+            subprocess.run(['net', 'stop', 'sshd'], check=False)
+            self.ssh_keys_dir = Path('C:\\ProgramData\\ssh')
         elif conf.is_linux:
             subprocess.run([conf.sudo, 'systemctl', 'disable', '--now', 'ssh.socket'])
             subprocess.run([conf.sudo, 'systemctl', 'stop', 'ssh'], check=True)
@@ -54,6 +62,20 @@ class ServiceSSH(Service):
             separator = b'' if authorized_keys_file.read_bytes().endswith(b'\n') else b'\n'
             with open(authorized_keys_file, 'ab') as dst:
                 dst.write(separator + client_pub + b'\n')
+        if conf.is_windows:
+            admin_keys = self.ssh_keys_dir / 'administrators_authorized_keys'
+            if not admin_keys.exists():
+                admin_keys.write_bytes(client_pub)
+                subprocess.run([
+                    shutil.which('icacls'), admin_keys,
+                    '/inheritance:r',
+                    '/grant', 'Administrators:F',
+                    '/grant', 'SYSTEM:F'], check=True)
+            else:
+                separator = b'' if admin_keys.read_bytes().endswith(b'\n') else b'\n'
+                with open(admin_keys, 'ab') as dst:
+                    dst.write(separator + client_pub + b'\n')
+
 
     def start(self):
         self.tunnel.start()

@@ -92,7 +92,7 @@ def remote_call_result(pickle_file):
 
 
 def as_root(function, *args, **kwargs):
-    if os.geteuid() == 0:
+    if (not hasattr(os, 'geteuid')) or (os.geteuid() == 0):
         return function(*args, **kwargs)
     pickle_file = prepare_remote_call(function, args, kwargs)
     subprocess.run([shutil.which('sudo'), sys.executable, conf.scripts_dir / 'do_remote_call.py', pickle_file], check=True)
