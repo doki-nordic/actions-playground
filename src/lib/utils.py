@@ -130,7 +130,7 @@ class CallOnce:
         return self.result
 
 
-def firewall_open(port: int, program: 'str|None'):
+def firewall_open(port: int, program: 'str|None' = None):
     if conf.is_windows:
         subprocess.run([
             shutil.which('netsh'), 'advfirewall',

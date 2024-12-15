@@ -8,7 +8,7 @@ class ConnectionType(Enum):
 
 class Tunnel:
 
-    def setup(self, name: str, type: ConnectionType, port: int, endpoint: str|None, client_port: int):
+    def setup(self, name: str, type: ConnectionType, port: int, endpoint: 'str|None', client_port: int):
         self.name = name
         self.type = type
         self.port = port
@@ -27,7 +27,7 @@ class Tunnel:
     def is_stopped(self):
         return False
 
-    def get_info(self) -> dict[str, str]:
+    def get_info(self) -> 'dict[str, str]':
         # info - general info in Markdown,
         # host - optional host for client,
         # port - optional port for client,

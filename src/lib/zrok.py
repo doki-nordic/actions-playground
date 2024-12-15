@@ -51,7 +51,7 @@ class Zrok(Tunnel):
         self._info_ready = False
         self.is_stopped = lambda: False
 
-    def setup(self, name: str, type: ConnectionType, port: int, endpoint: str|None, client_port: int):
+    def setup(self, name: str, type: ConnectionType, port: int, endpoint: 'str|None', client_port: int):
         super().setup(name, type, port, endpoint, client_port)
         global_prepare()
         if self.endpoint:

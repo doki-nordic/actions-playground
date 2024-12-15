@@ -42,12 +42,14 @@ class ServiceFiles(Service):
         self.tunnel.start()
 
     def _start_process(self):
-        self._process = ProcessHandler([
-                conf.sudo,
-                shutil.which('php'),
-                '-S', f'127.0.0.1:{conf.files.port}',
-                '-t', self.app_dir
-            ])
+        args = [
+            shutil.which('php'),
+            '-S', f'127.0.0.1:{conf.files.port}',
+            '-t', self.app_dir
+        ]
+        if not conf.is_windows:
+            args.insert(0, conf.sudo)
+        self._process = ProcessHandler(args)
         self._process.on_exit = self._process_on_exit
 
     def _process_on_exit(self, process: subprocess.Popen, forced: bool):
