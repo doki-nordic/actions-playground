@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import json
 import shutil
 import pickle
 import random
@@ -13,7 +14,7 @@ from pathlib import Path
 from typing import Literal
 
 import lib.conf as conf
-
+import lib.ctx as ctx
 
 def download(url: str, output: 'Path|None') -> bytes:
     urllib.request.urlretrieve(url, output)
@@ -129,7 +130,7 @@ class CallOnce:
         return self.result
 
 
-def firewall_open(port: int):
+def firewall_open(port: int, program):
     if conf.is_windows:
         subprocess.run([
             shutil.which('netsh'), 'advfirewall',
@@ -137,7 +138,22 @@ def firewall_open(port: int):
             f'name=OpenPort{port}', 'dir=in', 'action=allow', 'protocol=TCP',
             f'localport={port}'
         ], check=True, shell=False)
-    # elif conf.is_linux:
-    #     subprocess.run(['ufw', 'allow', str(port)], check=True, shell=True)
+    elif conf.is_linux:
+        #subprocess.run(['ufw', 'allow', str(port)], check=True, shell=True)
+        subprocess.run([conf.sudo, 'setcap', 'cap_net_bind_service=+ep', str(Path(program).resolve())], check=True)
     # elif conf.is_macos:
     #     subprocess.run(['brew', 'services', 'start', 'firewall', '--args', 'add', 'port', str(port), 'tcp'])
+
+
+def get_environment(pwd):
+    json_file = conf.temp_dir / (ctx.inputs.shell + '.json')
+    with open(json_file, 'rb') as fd:
+        env = json.load(fd)
+    for name in [*env.keys()]:
+        if name.startswith('_PLAYGROUND_IGNORE_'):
+            del env[name]
+        elif name == 'PWD':
+            env[name] = str(pwd)
+        elif name.startswith('GITHUB_'):
+            env[name] = os.getenv(name, env[name])
+    return env

@@ -4,6 +4,7 @@ import time
 import subprocess
 
 import lib.conf as conf
+import lib.ctx as ctx
 from lib.proc import ProcessHandler, run_ret
 from lib.utils import CallOnce, add_cleanup_command, download, untar
 from lib.tunnel import ConnectionType, Tunnel
@@ -20,8 +21,8 @@ def global_prepare(_checked=False):
     # Disable environment on cleanup
     add_cleanup_command(2, [exe_file, 'disable'])
     # Verify the token
-    if conf.zrok_token is None:
-        raise ValueError('Zrok token is not provided')
+    if not hasattr(ctx.secrets, 'ZROK_TOKEN'):
+        raise ValueError('ZROK_TOKEN secret is required.')
     # Download if does not exist
     if not exe_file.exists():
         download(conf.zrok_url, tar_file)
@@ -32,7 +33,7 @@ def global_prepare(_checked=False):
     (status_stdout, status_stderr, _) = run_ret([exe_file, 'status'], check=True)
     # Enable if needed
     if (status_stdout + status_stderr).lower().find('use the zrok enable command') >= 0:
-        subprocess.run([exe_file, 'enable', conf.zrok_token], check=True)
+        subprocess.run([exe_file, 'enable', ctx.secrets.ZROK_TOKEN], check=True)
     # Show status
     subprocess.run([exe_file, 'status'], check=True)
 

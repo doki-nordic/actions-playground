@@ -18,6 +18,13 @@ on:
           - macos-14
           - macos-13
           - macos-12
+      shell:
+        type: choice
+        description: Shell
+        options:
+          - bash
+          - pwsh
+          - cmd
 jobs:
   action:
     runs-on: ${{ github.event.inputs.os }}

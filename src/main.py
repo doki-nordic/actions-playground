@@ -10,10 +10,14 @@ from lib.zrok import Zrok
 t = ServiceTerm()
 t.setup(Zrok())
 
+ssh = Zrok()
+ssh.setup('ssh', ConnectionType.SSH, 22, 'dokissh', 9922)
+
 print('===== STARTING')
 
 t.start()
-while not t.is_started():
+ssh.start()
+while (not t.is_started()) or not ssh.is_started():
     poll_objects()
     time.sleep(0.1)
 
@@ -22,7 +26,8 @@ print('===== RUNNING')
 while True:
     poll_objects()
     print(t.tunnel.get_info())
-    time.sleep(1)
+    print(ssh.get_info())
+    time.sleep(3)
     if (conf.temp_dir / 'a').exists():
         (conf.temp_dir / 'a').rename(conf.temp_dir / 'b')
         break
@@ -30,7 +35,8 @@ while True:
 print('===== STOPPING')
 
 t.stop()
-while not t.is_stopped():
+ssh.stop()
+while (not t.is_stopped()) or not ssh.is_stopped():
     poll_objects()
     time.sleep(0.1)
 

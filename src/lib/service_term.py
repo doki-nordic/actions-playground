@@ -5,9 +5,10 @@ import subprocess
 from pathlib import Path
 
 import lib.conf as conf
+import lib.ctx as ctx
 from lib.service import Service
 from lib.proc import ProcessHandler
-from lib.utils import download, firewall_open
+from lib.utils import download, firewall_open, get_environment
 from lib.tunnel import ConnectionType, Tunnel
 
 
@@ -31,7 +32,7 @@ class ServiceTerm(Service):
             except:
                 subprocess.run(['brew', 'install', 'ttyd'], check=True, shell=True)
                 self.exe_file = Path(shutil.which('ttyd'))
-        firewall_open(conf.term.port)
+        firewall_open(conf.term.port, self.exe_file)
 
     def start(self):
         self._start_process()
@@ -39,14 +40,16 @@ class ServiceTerm(Service):
 
     def _start_process(self):
         self._process = ProcessHandler([
-            self.exe_file,
-            '--writable',
-            '--debug', '0',
-            '--port', str(conf.term.port),
-            '--cwd', '/home/doki',
-            '--credential', 'runneradmin:123',
-            shutil.which('bash'),
-            ])
+                self.exe_file,
+                '--writable',
+                '--debug', '0',
+                '--port', str(conf.term.port),
+                '--cwd', ctx.github.workspace,
+                '--credential', f'{conf.user}:{ctx.secrets.PASSWORD}',
+                shutil.which(ctx.inputs.shell),
+            ],
+            env=get_environment(ctx.github.workspace),
+            cwd=ctx.github.workspace)
         self._process.on_exit = self._process_on_exit
 
     def _process_on_exit(self, process: subprocess.Popen, forced: bool):
