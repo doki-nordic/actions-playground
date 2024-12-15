@@ -1,5 +1,4 @@
 
-
 import time
 import lib.conf as conf
 from lib.service_term import ServiceTerm
