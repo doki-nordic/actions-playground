@@ -34,6 +34,22 @@ def install_win_sshd():
         subprocess.run(['msiexec', '/quiet', '/qn', '/i', str(sshd_msi)], check=True, shell=True)
 
 
+def get_ssh_keys():
+    keys_raw = [
+        *conf.get_multi_value("SSH_KEYS"),
+        *conf.get_multi_value("SSH_KEY"),
+        *conf.get_multi_value("CLIENT_KEYS"),
+        *conf.get_multi_value("CLIENT_KEY")
+        ]
+    keys_joined = '\n'.join(keys_raw).encode() + b'\n'
+    keys_joined += (conf.keys_dir / 'client_key.pub').read_bytes()
+    keys_text = keys_joined.replace(b';', b'\n').replace(b'\r', b'\n')
+    keys_arr = keys_text.split(b'\n')
+    keys_clean = [key.strip() for key in keys_arr if len(key.strip()) > 0]
+    keys_unique = set(keys_clean)
+    return b'\n'.join(keys_unique) + b'\n'
+
+
 class ServiceSSH(Service):
 
     def setup(self, tunnel: Tunnel):
@@ -53,7 +69,7 @@ class ServiceSSH(Service):
         unpack_keys()
         as_root(replace_host_keys, self.ssh_keys_dir)
         authorized_keys_file = Path.home() / '.ssh/authorized_keys'
-        client_pub = (conf.keys_dir / 'client_key.pub').read_bytes()
+        client_pub = get_ssh_keys()
         if not authorized_keys_file.exists():
             authorized_keys_file.parent.mkdir(parents=True, exist_ok=True)
             authorized_keys_file.write_bytes(client_pub)

@@ -54,25 +54,46 @@ ttyd_url = ttyd_urls[system]
 if not is_windows and not is_linux and not is_macos:
     raise ValueError('Unsupported operating system')
 
+
+settings_conf = {}
+settings_vars = {}
+settings_secrets = {}
+
 def parse_settings_conf():
-    result = {}
+    global settings_conf, settings_vars, settings_secrets
     if hasattr(ctx.vars, 'CONF'):
         config = configparser.ConfigParser()
         config.read_string('[conf]\n' + ctx.vars.CONF)
         for name, value in config['conf'].items():
-            result[name.upper()] = str(value)
+            settings_conf[name.upper()] = str(value)
     for name, value in ctx.vars.__dict__.items():
         if name.upper() != 'CONF':
-            result[name.upper()] = value
-    return result
+            settings_vars[name.upper()] = value
+    for name, value in ctx.secrets.__dict__.items():
+        settings_secrets[name.upper()] = value
+
+parse_settings_conf()
 
 def get_value(name, default=None) -> 'str|None':
     name = name.upper()
+    if name in settings_vars:
+        return settings_vars[name]
+    if name in settings_secrets:
+        return settings_secrets[name]
     if name in settings_conf:
         return settings_conf[name]
     return default
 
-settings_conf = parse_settings_conf()
+def get_multi_value(name) -> 'list[str]|None':
+    name = name.upper()
+    res = []
+    if name in settings_vars:
+        res.append(settings_vars[name])
+    if name in settings_secrets:
+        res.append(settings_secrets[name])
+    if name in settings_conf:
+        res.append(settings_conf[name])
+    return res
 
 ip_address = get_value('IP', None),
 
