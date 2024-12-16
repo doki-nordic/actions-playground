@@ -137,6 +137,8 @@ class CallOnce:
 
 def firewall_open(port: int, program: 'str|None' = None):
     if conf.is_windows:
+        if port == 80:
+            subprocess.run([shutil.which('net'), 'stop', '/y', 'W3SVC'])
         subprocess.run([
             shutil.which('netsh'), 'advfirewall',
             'firewall', 'add', 'rule',

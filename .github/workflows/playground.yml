@@ -25,58 +25,62 @@ on:
           - bash
           - pwsh
           - cmd
-      term:
+      tunnel:
         type: choice
-        description: HTTP terminal
+        description: Tunnel service
         options:
           - bore
           - zrok
           - ZeroTier
-          - srv.us
-          - localhost.run
-          - ngrok
-      files:
-        type: choice
-        description: File browser
-        options:
-          - bore
-          - zrok
-          - ZeroTier
-          - srv.us
-          - localhost.run
-          - ngrok
-      ssh:
-        type: choice
-        description: SSH
-        options:
-          - bore
-          - zrok
-          - ZeroTier
-          - SSH-J.com
-      rdp:
-        type: choice
-        description: Remote Desktop
-        options:
-          - bore
-          - zrok
-          - ZeroTier
+          - srv.us + SSH-J.com
+          - localhost.run + SSH-J.com
+          - ngrok + SSH-J.com
 jobs:
   action:
     runs-on: ${{ github.event.inputs.os }}
     steps:
 
-      # Connect with ZeroTier
+      # Connect with ZeroTier if needed
 
-      - uses: zerotier/github-action@v1.0.1
+      - name: Connect to ZeroTier
+        uses: zerotier/github-action@v1.0.1
+        if: (github.event.inputs.tunnel == 'ZeroTier') || (vars.DEBUG == 'yes')
         with:
-          network_id: ${{ secrets.NETWORK_ID }}
-          auth_token: ${{ secrets.ACCESS_TOKEN  }}
+          network_id: ${{ secrets.ZEROTIER_NETWORK_ID }}
+          auth_token: ${{ secrets.ZEROTIER_ACCESS_TOKEN  }}
 
-      - uses: kildom/zerotier-management-action@v1.0.0
+      - name: Setup ZeroTier
+        uses: kildom/zerotier-management-action@v1.0.0
+        if: (github.event.inputs.tunnel == 'ZeroTier') || (vars.DEBUG == 'yes')
         with:
-          auth_token: ${{ secrets.ACCESS_TOKEN  }}
+          auth_token: ${{ secrets.ZEROTIER_ACCESS_TOKEN  }}
           ip: '${{ secrets.IP }} ${{ vars.IP }}'
           name: 'Actions Playground'
+
+      # Setup debug channel if debug more is enabled
+
+      - name: Download ttyd for debug mode (windows)
+        if: vars.DEBUG == 'yes' && startsWith(github.event.inputs.os, 'windows')
+        shell: cmd
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -L https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.win32.exe --output ttyd.exe
+          netsh advfirewall firewall add rule name="Open Port 8080" dir=in action=allow protocol=TCP localport=8080
+
+      - name: Download ttyd for debug mode (ubuntu)
+        if: vars.DEBUG == 'yes' && startsWith(github.event.inputs.os, 'ubuntu')
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -L https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.x86_64 --output ttyd
+          chmod 755 ttyd
+          echo TTYD_CMD=${{ runner.temp }}/ttyd >> $GITHUB_ENV
+
+      - name: Download ttyd for debug mode (macos)
+        if: vars.DEBUG == 'yes' && startsWith(github.event.inputs.os, 'macos')
+        working-directory: ${{ runner.temp }}
+        run: |
+          brew install ttyd
+          echo TTYD_CMD=ttyd >> $GITHUB_ENV
 
       # Checkout repo and keys and move to runner.temp
 
@@ -123,55 +127,46 @@ jobs:
 
       # Make sure that we use correct python executable
 
-      - shell: cmd
+      - name: Check python executable (windows)
+        shell: cmd
         if: startsWith(github.event.inputs.os, 'windows')
         run: echo _PLAYGROUND_IGNORE_PYTHON=python.exe >> %GITHUB_ENV%
 
-      - shell: bash
+      - name: Check python executable (non-windows)
+        shell: bash
         if: (!startsWith(github.event.inputs.os, 'windows'))
         run: echo _PLAYGROUND_IGNORE_PYTHON=python3 >> $GITHUB_ENV
 
       # Collect environment variables for different shells
 
-      - shell: bash
+      - name: Collect environment variables for bash
+        shell: bash
         working-directory: ${{ runner.temp }}/repo
         run: |
           $_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../bash.json
 
-      - shell: cmd
+      - name: Collect environment variables for cmd
+        shell: cmd
         if: startsWith(github.event.inputs.os, 'windows')
         working-directory: ${{ runner.temp }}/repo
         run: |
           %_PLAYGROUND_IGNORE_PYTHON% src\collect_env.py > ..\cmd.json
 
-      - shell: pwsh
+      - name: Collect environment variables for pwsh
+        shell: pwsh
         working-directory: ${{ runner.temp }}/repo
         run: |
           & $env:_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../pwsh.json
 
-      - shell: bash
-        working-directory: ${{ runner.temp }}/repo
-        run: |
-          $_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../bash2.json
-
-      - shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}/repo
-        run: |
-          %_PLAYGROUND_IGNORE_PYTHON% src\collect_env.py > ..\cmd2.json
-
-      - shell: pwsh
-        working-directory: ${{ runner.temp }}/repo
-        run: |
-          & $env:_PLAYGROUND_IGNORE_PYTHON src/collect_env.py > ../pwsh2.json
-
       # Change password
 
-      - if: startsWith(github.event.inputs.os, 'ubuntu')
+      - name: Change system password (ubuntu)
+        if: startsWith(github.event.inputs.os, 'ubuntu')
         run: |
           echo -e "${{ secrets.PASSWORD }}\n${{ secrets.PASSWORD }}" | sudo passwd `whoami`
 
-      - if: startsWith(github.event.inputs.os, 'macos')
+      - name: Change system password (macos)
+        if: startsWith(github.event.inputs.os, 'macos')
         run: |
           sysadminctl -adminUser runner \
             -adminPassword `sudo python3 ${{ runner.temp }}/repo/src/getpwd.py` \
@@ -180,57 +175,39 @@ jobs:
             -activate -configure -access -on -clientopts -setvnclegacy -vnclegacy yes \
             -clientopts -setvncpw -vncpw ${{ secrets.PASSWORD }} -restart -agent -privs -all
 
-      - if: startsWith(github.event.inputs.os, 'windows')
+      - name: Change system password (windows)
+        if: startsWith(github.event.inputs.os, 'windows')
         shell: cmd
         run: |
           net user runneradmin "${{ secrets.PASSWORD }}"
 
-      # Download ttyd
-
-      - name: Download ttyd (windows)
-        shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}
-        run: |
-          curl -L https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.win32.exe --output ttyd.exe
-          net stop /y W3SVC
-          netsh advfirewall firewall add rule name="Open Port 8080" dir=in action=allow protocol=TCP localport=8080
-
-      - name: Download ttyd (ubuntu)
-        if: startsWith(github.event.inputs.os, 'ubuntu')
-        working-directory: ${{ runner.temp }}
-        run: |
-          curl -L https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.x86_64 --output ttyd
-          chmod 755 ttyd
-          echo TTYD_CMD=${{ runner.temp }}/ttyd >> $GITHUB_ENV
-
-      - name: Download ttyd (macos)
-        if: startsWith(github.event.inputs.os, 'macos')
-        working-directory: ${{ runner.temp }}
-        run: |
-          brew install ttyd
-          echo TTYD_CMD=ttyd >> $GITHUB_ENV
-
       # Do rest of the work in Python, it's easier there
 
-      - name: Your work starts here (non-windows)
-        if: (!startsWith(github.event.inputs.os, 'windows'))
-        working-directory: ${{ runner.temp }}/repo
-        run: |
-          sudo -u "`whoami`" ${{ env.TTYD_CMD }} -W -d 0 -p 8080 -w '${{ github.workspace }}' -c 'runner:${{ secrets.PASSWORD }}' bash &
-          sudo ps aux
-          ps aux
-          sleep 21600
-
-      - name: Your work starts here (windows non-bash)
-        shell: cmd
-        if: startsWith(github.event.inputs.os, 'windows')
-        working-directory: ${{ runner.temp }}/repo
+      - name: Debug mode (non-windows)
+        if: vars.DEBUG == 'yes' && !startsWith(github.event.inputs.os, 'windows')
+        working-directory: ${{ runner.temp }}
         env:
           RUNNER_TEMP: ${{ runner.temp }}
         run: |
-          start /i /b "" %RUNNER_TEMP%\ttyd.exe -W -d 0 -p 8080 -w "${{ github.workspace }}" -c "runneradmin:${{ secrets.PASSWORD }}" cmd.exe
+          ${{ env.TTYD_CMD }} -W -d 0 -p 8080 -w "$RUNNER_TEMP" -c 'runner:${{ secrets.PASSWORD }}' bash &
+          python3 -c "import time; time.sleep(21600)"
+
+      - name: Debug mode (windows non-bash)
+        if: vars.DEBUG == 'yes' && startsWith(github.event.inputs.os, 'windows')
+        shell: cmd
+        working-directory: ${{ runner.temp }}
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          start /i /b "" ttyd.exe -W -d 0 -p 8080 -w "%RUNNER_TEMP%" -c "runner:${{ secrets.PASSWORD }}" cmd.exe
           python -c "import time; time.sleep(21600)"
+
+      - name: Your work starts here (non-windows)
+        if: vars.DEBUG != 'yes'
+        shell: bash
+        working-directory: ${{ runner.temp }}/repo
+        run: |
+          $_PLAYGROUND_IGNORE_PYTHON src/main.py
 
       # Upload an Artifact
 
@@ -244,7 +221,7 @@ jobs:
 
       # Cleanup
 
-      - name: CLeanup
+      - name: Cleanup
         if: always()
         shell: bash
         working-directory: ${{ runner.temp }}/repo
