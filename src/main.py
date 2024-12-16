@@ -6,6 +6,8 @@ from lib.service_files import ServiceFiles
 from lib.utils import poll_objects
 from lib.tunnel import ConnectionType
 from lib.zrok import Zrok
+from lib.bore import Bore
+from lib.zerotier import ZeroTier
 from lib.service import Service
 from lib.service_rdp import ServiceRDP
 from lib.service_ssh import ServiceSSH
@@ -13,19 +15,19 @@ from lib.service_ssh import ServiceSSH
 services: 'list[Service]' = []
 
 t = ServiceTerm()
-t.setup(Zrok())
+t.setup(ZeroTier())
 services.append(t)
 
 f = ServiceFiles()
-f.setup(Zrok())
+f.setup(ZeroTier())
 services.append(f)
 
 rdp = ServiceRDP()
-rdp.setup(Zrok())
+rdp.setup(ZeroTier())
 services.append(rdp)
 
 ssh = ServiceSSH()
-ssh.setup(Zrok())
+ssh.setup(ZeroTier())
 services.append(ssh)
 
 

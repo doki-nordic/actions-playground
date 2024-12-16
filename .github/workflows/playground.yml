@@ -25,6 +25,41 @@ on:
           - bash
           - pwsh
           - cmd
+      term:
+        type: choice
+        description: HTTP terminal
+        options:
+          - bore
+          - zrok
+          - ZeroTier
+          - srv.us
+          - localhost.run
+          - ngrok
+      files:
+        type: choice
+        description: File browser
+        options:
+          - bore
+          - zrok
+          - ZeroTier
+          - srv.us
+          - localhost.run
+          - ngrok
+      ssh:
+        type: choice
+        description: SSH
+        options:
+          - bore
+          - zrok
+          - ZeroTier
+          - SSH-J.com
+      rdp:
+        type: choice
+        description: Remote Desktop
+        options:
+          - bore
+          - zrok
+          - ZeroTier
 jobs:
   action:
     runs-on: ${{ github.event.inputs.os }}

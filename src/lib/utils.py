@@ -7,6 +7,7 @@ import shutil
 import pickle
 import random
 import tarfile
+import zipfile
 import threading
 import subprocess
 import urllib.request
@@ -23,6 +24,10 @@ def download(url: str, output: 'Path|None') -> bytes:
 def untar(file: Path, output: Path, compression: 'Literal["gz", "xz", "bz2"]|None') -> None:
     with tarfile.open(file, 'r' if compression is None else 'r:' + compression) as tar:
         tar.extractall(path=output)
+
+def unzip(file: Path, output: Path) -> None:
+    with zipfile.ZipFile(file, 'r') as zf:
+        zf.extractall(output)
 
 
 polling_objects = set()

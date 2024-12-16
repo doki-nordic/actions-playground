@@ -10,10 +10,24 @@ ssh     | 22   | 9922 | SSH + SFTP
 rdp     | 3389 | 9989 | Remote Desktop (Window only)
 
 
-Secrets:
+Secrets only:
 * `PASSWORD`
-* `ZROK_TOKEN`
-* `NETWORK_ID`
-* `ACCESS_TOKEN`
+* Zrok
+  * `ZROK_TOKEN`
+* ZeroTier
+  * `ZEROTIER_NETWORK_ID`
+  * `ZEROTIER_ACCESS_TOKEN`
 
-Configuration (in `CONF` )
+
+* `IP`
+* `TERM_ENDPOINT`
+* `TERM_PORT`
+* `TERM_CLIENT_PORT`
+* `FILES_ENDPOINT`
+* `FILES_PORT`
+* `FILES_CLIENT_PORT`
+* `SSH_ENDPOINT`
+* `SSH_CLIENT_PORT`
+* `RDP_ENDPOINT`
+* `RDP_CLIENT_PORT`
+* `SSH_KEYS`

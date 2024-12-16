@@ -14,6 +14,12 @@ zrok_urls = {
     'darwin': 'https://github.com/openziti/zrok/releases/download/v0.4.44/zrok_0.4.44_darwin_amd64.tar.gz',
 }
 
+bore_urls = {
+    'windows': 'https://github.com/ekzhang/bore/releases/download/v0.5.2/bore-v0.5.2-x86_64-pc-windows-msvc.zip',
+    'linux': 'https://github.com/ekzhang/bore/releases/download/v0.5.2/bore-v0.5.2-x86_64-unknown-linux-musl.tar.gz',
+    'darwin': 'https://github.com/ekzhang/bore/releases/download/v0.5.2/bore-v0.5.2-x86_64-apple-darwin.tar.gz',
+}
+
 ttyd_urls = {
     'windows': 'https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.win32.exe',
     'linux': 'https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64',
@@ -49,6 +55,7 @@ else:
     temp_dir = root_dir.parent
 
 zrok_url = zrok_urls[system]
+bore_url = bore_urls[system]
 ttyd_url = ttyd_urls[system]
 
 if not is_windows and not is_linux and not is_macos:

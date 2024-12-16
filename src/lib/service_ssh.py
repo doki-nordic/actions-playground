@@ -13,6 +13,9 @@ from lib.utils import as_root, download, firewall_open, unpack_keys
 from lib.tunnel import ConnectionType, Tunnel
 
 
+is_docker = Path('/.dockerenv').exists()
+
+
 def replace_host_keys(ssh_keys_dir: Path):
     for dst_pub_file in ssh_keys_dir.glob('ssh_host_*_key.pub'):
         dst_prv_file = dst_pub_file.with_suffix('')
@@ -53,12 +56,13 @@ def get_ssh_keys():
 
 def stop_ssh_service(stop_cmd, check_cmd, check_re):
     subprocess.run(stop_cmd)
-    for _ in range(15):
-        time.sleep(1)
-        result = subprocess.run(check_cmd, stdout=subprocess.PIPE, check=True)
-        port_list = str(result.stdout, 'utf-8')
-        if re.search(check_re, port_list) is None:
-            break
+    if not is_docker:
+        for _ in range(15):
+            time.sleep(1)
+            result = subprocess.run(check_cmd, stdout=subprocess.PIPE, check=True)
+            port_list = str(result.stdout, 'utf-8')
+            if re.search(check_re, port_list) is None:
+                break
 
 
 class ServiceSSH(Service):
@@ -73,7 +77,7 @@ class ServiceSSH(Service):
         elif conf.is_linux:
             subprocess.run([conf.sudo, 'systemctl', 'disable', '--now', 'ssh.socket'])
             stop_ssh_service(
-                [conf.sudo, 'systemctl', 'stop', 'ssh'],
+                [conf.sudo, 'systemctl', 'stop', 'ssh'] if not is_docker else [conf.sudo, 'service', 'ssh', 'stop'],
                 ['netstat', '-lt'],
                 r':(22|ssh)\s'
             )
@@ -118,8 +122,11 @@ class ServiceSSH(Service):
         if conf.is_windows:
             subprocess.run(['net', 'start', 'sshd'], check=True)
         elif conf.is_linux:
-            subprocess.run([conf.sudo, 'systemctl', 'enable', '--now', 'ssh.socket'])
-            subprocess.run([conf.sudo, 'systemctl', 'start', 'ssh'], check=True)
+            if not is_docker:
+                subprocess.run([conf.sudo, 'systemctl', 'enable', '--now', 'ssh.socket'])
+                subprocess.run([conf.sudo, 'systemctl', 'start', 'ssh'], check=True)
+            else:
+                 subprocess.run([conf.sudo, 'service', 'ssh', 'start'], check=True)
         elif conf.is_macos:
             subprocess.run([conf.sudo, 'launchctl', 'load', '/System/Library/LaunchDaemons/ssh.plist'])
 
