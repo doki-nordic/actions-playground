@@ -1,4 +1,5 @@
 
+import re
 import time
 import shutil
 import subprocess
@@ -50,6 +51,16 @@ def get_ssh_keys():
     return b'\n'.join(keys_unique) + b'\n'
 
 
+def stop_ssh_service(stop_cmd, check_cmd, check_re):
+    subprocess.run(stop_cmd)
+    for _ in range(15):
+        time.sleep(1)
+        result = subprocess.run(check_cmd, stdout=subprocess.PIPE, check=True)
+        port_list = str(result.stdout, 'utf-8')
+        if re.search(check_re, port_list) is None:
+            break
+
+
 class ServiceSSH(Service):
 
     def setup(self, tunnel: Tunnel):
@@ -61,11 +72,19 @@ class ServiceSSH(Service):
             self.ssh_keys_dir = Path('C:\\ProgramData\\ssh')
         elif conf.is_linux:
             subprocess.run([conf.sudo, 'systemctl', 'disable', '--now', 'ssh.socket'])
-            subprocess.run([conf.sudo, 'systemctl', 'stop', 'ssh'], check=True)
+            stop_ssh_service(
+                [conf.sudo, 'systemctl', 'stop', 'ssh'],
+                ['netstat', '-lt'],
+                r':(22|ssh)\s'
+            )
             self.ssh_keys_dir = Path('/etc/ssh')
         elif conf.is_macos:
-            pass # TODO: stop service in macOS
-            self.ssh_keys_dir = Path('.') # TODO: keys path in macOS
+            stop_ssh_service(
+                [conf.sudo, 'launchctl', 'unload', '/System/Library/LaunchDaemons/ssh.plist'],
+                ['netstat', '-anvp', 'tcp'],
+                r'\.22\s'
+            )
+            self.ssh_keys_dir = Path('/etc/ssh')
         unpack_keys()
         as_root(replace_host_keys, self.ssh_keys_dir)
         authorized_keys_file = Path.home() / '.ssh/authorized_keys'
@@ -73,11 +92,12 @@ class ServiceSSH(Service):
         if not authorized_keys_file.exists():
             authorized_keys_file.parent.mkdir(parents=True, exist_ok=True)
             authorized_keys_file.write_bytes(client_pub)
-            authorized_keys_file.chmod(0o644)
         else:
             separator = b'' if authorized_keys_file.read_bytes().endswith(b'\n') else b'\n'
             with open(authorized_keys_file, 'ab') as dst:
                 dst.write(separator + client_pub + b'\n')
+        authorized_keys_file.chmod(0o600)
+        authorized_keys_file.parent.chmod(0o700)
         if conf.is_windows:
             admin_keys = self.ssh_keys_dir / 'administrators_authorized_keys'
             if not admin_keys.exists():
@@ -101,7 +121,7 @@ class ServiceSSH(Service):
             subprocess.run([conf.sudo, 'systemctl', 'enable', '--now', 'ssh.socket'])
             subprocess.run([conf.sudo, 'systemctl', 'start', 'ssh'], check=True)
         elif conf.is_macos:
-            pass # TODO: start service in macOS
+            subprocess.run([conf.sudo, 'launchctl', 'load', '/System/Library/LaunchDaemons/ssh.plist'])
 
     def is_started(self):
         return self.tunnel.is_started()

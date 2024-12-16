@@ -12,25 +12,22 @@ from lib.service_ssh import ServiceSSH
 
 services: 'list[Service]' = []
 
-# t = ServiceTerm()
-# t.setup(Zrok())
-# services.append(t)
+t = ServiceTerm()
+t.setup(Zrok())
+services.append(t)
 
-# f = ServiceFiles()
-# f.setup(Zrok())
-# services.append(f)
+f = ServiceFiles()
+f.setup(Zrok())
+services.append(f)
 
-# rdp = ServiceRDP()
-# rdp.setup(Zrok())
-# services.append(rdp)
-
-rdp = ServiceSSH()
+rdp = ServiceRDP()
 rdp.setup(Zrok())
 services.append(rdp)
 
-# ssh = Zrok()
-# ssh.setup('ssh', ConnectionType.SSH, 22, 'dokissh', 9922)
-# services.append(ssh)
+ssh = ServiceSSH()
+ssh.setup(Zrok())
+services.append(ssh)
+
 
 print('===== STARTING')
 
